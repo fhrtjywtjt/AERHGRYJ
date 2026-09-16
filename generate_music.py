@@ -1,44 +1,43 @@
 import os
-import time
-import requests
+import scipy.io.wavfile
+import torch
+from transformers import MusicgenForConditionalGeneration, AutoProcessor
 
-API_URL = "https://api-inference.huggingface.co/models/facebook/musicgen-small"
-HF_TOKEN = os.getenv("HF_TOKEN")
-
-def generate_bgm():
-    if not HF_TOKEN:
-        print("⚠️ HF_TOKEN is missing! BGM skip kar rahe hain.")
-        return
-
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
-    
+def generate_local_ai_music():
+    # 1. Prompt read karna (Jo AI ne story ke hisaab se banaya tha)
     prompt = "sad cinematic emotional piano"
     if os.path.exists("music_prompt.txt"):
         with open("music_prompt.txt", "r", encoding="utf-8") as f:
             prompt = f.read().strip()
-            
-    print(f"🎵 Sending request to AI API for Music: '{prompt}'")
-    
-    payload = {"inputs": prompt}
-    max_retries = 3 
-    
-    for attempt in range(1, max_retries + 1):
-        try:
-            response = requests.post(API_URL, headers=headers, json=payload, timeout=120)
-            
-            if response.status_code == 200:
-                with open("bgm.wav", "wb") as f:
-                    f.write(response.content)
-                print("✅ 100% Original AI Background Music Generated Successfully!")
-                return
-            else:
-                print(f"⏳ API is loading/busy (Attempt {attempt}). Waiting 20 seconds...")
-                time.sleep(20)
-        except Exception as e:
-            print(f"⚠️ Error: {e}")
-            time.sleep(10)
-            
-    print("❌ Failed to generate music this time. Video will render without BGM.")
+
+    print(f"🎵 LOCAL AI is Composing Music for: '{prompt}'")
+    print("⏳ Please wait 3 to 5 minutes. The AI is creating the track inside GitHub's CPU...")
+
+    try:
+        # 2. AI Model ko local memory me load karna (Sirf pehli baar download hoga, CPU par chalega)
+        processor = AutoProcessor.from_pretrained("facebook/musicgen-small")
+        model = MusicgenForConditionalGeneration.from_pretrained("facebook/musicgen-small")
+
+        # 3. Prompt ko AI ke samajhne layak format me convert karna
+        inputs = processor(
+            text=[prompt],
+            padding=True,
+            return_tensors="pt",
+        )
+
+        # 4. Generate audio (max_new_tokens=512 matlab lagbhag 10-12 second ka music)
+        # Is gaane ko humara FFmpeg editor automatic loop kar dega poori video me.
+        audio_values = model.generate(**inputs, max_new_tokens=512)
+
+        # 5. Audio file ko wav format me save karna
+        sampling_rate = model.config.audio_encoder.sampling_rate
+        scipy.io.wavfile.write("bgm.wav", rate=sampling_rate, data=audio_values[0, 0].numpy())
+        
+        print("✅ 100% ORIGINAL LOCAL AI MUSIC GENERATED SUCCESSFULLY (bgm.wav)!")
+
+    except Exception as e:
+        print(f"❌ Local AI Generation Failed: {e}")
+        print("⚠️ Video will be rendered without background music this time.")
 
 if __name__ == "__main__":
-    generate_bgm()
+    generate_local_ai_music()
