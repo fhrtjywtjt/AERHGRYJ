@@ -11,20 +11,20 @@ def process_smooth_fade(v_path, index):
     
     fade_dur = 0.5
     
-    # Video Filter: 4K Lanczos scaling
-    vf = f"scale=2160:3840:flags=lanczos:force_original_aspect_ratio=increase,crop=2160:3840,setsar=1,fps=30,format=yuv420p,fade=t=in:st=0:d={fade_dur},fade=t=out:st=4.5:d={fade_dur}"
+    # 🔴 CHANGE HERE: 1080p (Full HD) resolution for YouTube Shorts
+    vf = f"scale=1080:1920:flags=lanczos:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p,fade=t=in:st=0:d={fade_dur},fade=t=out:st=4.5:d={fade_dur}"
     
-    # 🔴 AUDIO MAGIC: volume=3.0 (Awaaz 3 guna (300%) tez kar di hai)
+    # Audio volume boosted to 300%
     af = f"volume=3.0,afade=t=in:st=0:d={fade_dur},afade=t=out:st=4.5:d={fade_dur}"
     
-    # 🔴 SERVER CRASH FIX: preset 'fast' kiya hai taaki GitHub cancel na kare
+    # 🔴 CHANGE HERE: crf 23 and preset 'veryfast' to save GitHub Server CPU & prevent BAN
     cmd = [
         "ffmpeg", "-y", "-i", v_path,
         "-vf", vf, "-af", af,
-        "-c:v", "libx264", "-crf", "20", "-preset", "fast", "-c:a", "aac", "-b:a", "320k",
+        "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", "-c:a", "aac", "-b:a", "320k",
         out_path
     ]
-    print(f"⚙️ Rendering 4K Quality for Scene {index} (With Loud Audio)...")
+    print(f"⚙️ Rendering 1080p Full HD for Scene {index} (With Loud Audio)...")
     subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return out_path
 
@@ -37,7 +37,7 @@ def main():
     video_files.sort(key=lambda x: int(re.search(r'\d+', x).group()))
     processed_clips = []
     
-    print("✂️ Processing 4K Fades & Boosting Audio Volume...")
+    print("✂️ Processing 1080p Fades & Boosting Audio Volume...")
     for v_name in video_files:
         v_path = os.path.join(INPUT_DIR, v_name)
         idx = int(re.search(r'\d+', v_name).group())
@@ -48,12 +48,12 @@ def main():
         for clip in processed_clips: 
             f.write(f"file '{clip}'\n")
             
-    final_output = os.path.join(OUTPUT_DIR, "Final_4K_Monetizable_Short.mp4")
+    final_output = os.path.join(OUTPUT_DIR, "Final_4K_Monetizable_Short.mp4") # File name wahi rakha hai taaki upload_youtube.py error na de
     print("🎬 Merging all clips into Final Masterpiece...")
     
     subprocess.run(["ffmpeg", "-y", "-f", "concat", "-safe", "0", "-i", list_path, "-c", "copy", final_output], check=True)
     
-    print(f"🎉 MASTERPIECE GENERATED (4K, LOUD AUDIO): {final_output}")
+    print(f"🎉 MASTERPIECE GENERATED (1080p Full HD, LOUD AUDIO): {final_output}")
 
 if __name__ == "__main__": 
     main()
