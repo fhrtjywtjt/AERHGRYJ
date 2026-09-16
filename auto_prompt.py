@@ -47,20 +47,19 @@ def smart_ai_request(system_prompt, user_prompt, description):
 def generate_ai_script(duration_sec, topic):
     target_scenes = max(2, math.ceil(int(duration_sec) / 5))
     
-    system_prompt = "You are a Master Storyteller and Cinematic Director. Output ONLY the requested format. NO intros, NO tables, NO markdown. JUST THE SCENES."
+    system_prompt = "You are a highly aggressive Action-Drama Director for TikTok/YouTube Shorts. Output ONLY the requested format. NO tables, NO markdown."
     
-    # 🔴 YAHAN MAGIC HAI: VISUAL STORYTELLING ARC ADDED
-    user_prompt = f"""Task: Create a highly engaging, emotional story based on this idea: "{topic}".
+    # 🔴 YAHAN MAGIC HAI: HIGH ACTION, HIGH RETENTION, CONSTANT MOVEMENT
+    user_prompt = f"""Task: Create a FAST-PACED, highly engaging, emotional action story based on: "{topic}".
     Break this into exactly {target_scenes} scenes for a {duration_sec}-second short video.
 
-    🚨 VISUAL STORYTELLING RULES (CRITICAL):
-    - The sequence of scenes MUST tell a complete, easy-to-understand story from beginning to end WITHOUT words.
-    - ACT 1 (The Hook/Context): Start by showing WHY they are in this situation. Use visual clues (e.g., looking at a locked door, being chased away by silhouettes, dropping a torn photograph of a lost family).
-    - ACT 2 (The Struggle): Show their emotional pain, rejection, and physical struggle.
-    - ACT 3 (The Ending/Twist): Give it a clear, powerful ending (a heartwarming rescue, finding an abandoned shelter, or a tragic but beautiful final moment).
+    🚨 HIGH-RETENTION VISUAL STORYTELLING (CRITICAL):
+    - NO STATIC SCENES! The character must NEVER just "stand" or "sit". They must be in CONSTANT MOTION (running, stumbling, dodging, desperately crawling, panicking, reaching out, falling).
+    - CLEAR VISUAL PLOT: The audience must instantly know WHERE they came from, WHY they are panicking, and WHAT they are trying to do. (e.g., escaping a collapsing house, chasing a moving truck, desperately hiding from shadows).
+    - AGGRESSIVE PACING: The visual action and camera angle MUST change drastically in every scene to keep the viewer hooked.
 
-    🚨 YOUTUBE MONETIZATION & SAFETY GUIDELINES:
-    - 100% Advertiser-Friendly. NO blood, fire, death, or violence. Keep it safe but deeply sad.
+    🚨 YOUTUBE MONETIZATION & SAFETY:
+    - 100% Advertiser-Friendly. Safe but deeply emotional/intense. No blood/gore/fire. Use "storm, shadows, or collapsing ruins" instead of fire/blood.
 
     FORMAT RULES (Strictly 2 parts separated by | ):
     [Image Prompt] | [Video Prompt]
@@ -69,13 +68,13 @@ def generate_ai_script(duration_sec, topic):
     1. Invent a specific character and copy-paste it at the beginning of EVERY Image prompt.
     2. DO NOT output any tables. EVERY line MUST contain EXACTLY ONE '|'.
     
-    Example of a complete story format:
-    A sad anthropomorphic little puppy wearing a torn red sweater, looking heartbroken at a closed door as a human shadow walks away, 8k | Slow zoom in, loud door slamming sound, heavy rain starting. NO BGM.
-    A sad anthropomorphic little puppy wearing a torn red sweater, walking alone in the dark cold street holding a small broken toy, 8k | Tracking shot, splashing puddles, soft whimpering. NO BGM.
-    A sad anthropomorphic little puppy wearing a torn red sweater, finding a warm glowing cardboard box and curling up inside it to sleep, 8k | Slow fade out, soft wind, peaceful breathing sound. NO BGM.
+    Example of a High-Action Story Format:
+    A sad anthropomorphic little puppy wearing a torn red sweater, frantically sprinting out of an abandoned collapsing house, clutching a torn family photo in his mouth, looking back in terror, 8k | Shaky handheld tracking shot following him running, loud wooden crashing sounds, frantic panting, rapid heavy footsteps. NO BGM.
+    A sad anthropomorphic little puppy wearing a torn red sweater, stumbling and falling face-first into a deep muddy puddle while trying to dodge a speeding shadow, 8k | Fast whip pan, loud splashing sound, desperate yelping echo, mud dripping sound. NO BGM.
+    A sad anthropomorphic little puppy wearing a torn red sweater, desperately clawing at a locked iron gate in the rain trying to get inside, 8k | Fast zoom-in, aggressive metal rattling sounds, heavy rain pouring, loud whimpering. NO BGM.
     """
     
-    print(f"\n🚀 Writing YouTube Monetization-Proof Visual Story...")
+    print(f"\n🚀 Writing High-Retention Action/Emotional Script...")
     text = smart_ai_request(system_prompt, user_prompt, "Generating Script")
     if text:
         valid_lines = [line.strip() for line in text.split('\n') if '|' in line and not line.strip().startswith('|') and '---' not in line]
@@ -94,7 +93,7 @@ def generate_ai_metadata(topic):
             tags = re.search(r"TAGS:\s*(.*)", text).group(1).strip()
             return title, desc, tags
         except: pass
-    return "Heart Touching Story 😭 #shorts", "Wait for the end...", "shorts, sad, story"
+    return "Heart Touching Emotional Story 😭 #shorts", "Wait for the end... emotional short video.", "shorts, sad, story, emotional"
 
 def process_stories():
     if not os.path.exists(STORY_FILE): sys.exit(1)
@@ -112,7 +111,7 @@ def process_stories():
     title, desc, tags = generate_ai_metadata(topic)
     with open(METADATA_FILE, "w", encoding="utf-8") as f: f.write(f"TITLE: {title}\nDESC: {desc}\nTAGS: {tags}")
     with open(STORY_FILE, "w", encoding="utf-8") as f: f.write("\n".join(topics[1:]) + "\n" if len(topics) > 1 else "")
-    print("🎉 AI Visual Story Generated Successfully!")
+    print("🎉 AI High-Action Visual Story Generated Successfully!")
 
 if __name__ == "__main__":
     process_stories()
