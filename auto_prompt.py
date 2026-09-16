@@ -43,12 +43,30 @@ def smart_ai_request(system_prompt, user_prompt, description):
 
 def generate_ai_script(duration_sec, topic):
     target_scenes = max(2, math.ceil(int(duration_sec) / 5))
-    system_prompt = "You are a highly aggressive Action-Drama Director. Output ONLY the requested format. NO tables."
+    
+    system_prompt = "You are a highly aggressive Action-Drama Director. Output ONLY the requested format. NO tables. NO markdown."
+    
+    # 🔴 YAHAN MAGIC HAI: STRICT AUDIO BAN ADDED!
     user_prompt = f"""Task: Create a FAST-PACED, emotional action story based on: "{topic}". Exactly {target_scenes} scenes.
-    - Constant Motion (Running, dodging). NO static scenes.
-    - Safe for Monetization (No blood/gore/fire).
-    Format: [Image Prompt] | [Video Prompt]
-    Rule: Start every image prompt with the EXACT SAME character description. One '|' per line. NO TABLES."""
+
+    🚨 HIGH-RETENTION VISUALS:
+    - Constant Motion (Running, dodging, panicking). NO static scenes.
+    - Safe for Monetization (No blood/gore/fire/death). Use 'storm', 'shadows', 'ruins'.
+
+    🚨 AUDIO RULES (STRICTLY ENFORCED - READ CAREFULLY):
+    - NO BGM. NO MUSIC. DO NOT write words like "piano", "violin", "orchestral", "music", "melody", "song", or "soundtrack".
+    - NO VOICE. DO NOT write "speak", "talk", "voice", or "dialogue".
+    - ONLY HIGH-VOLUME FOLEY SOUND EFFECTS (e.g., "Loud water splashing, heavy rapid panting, loud muddy footsteps, aggressive wind howling, violent door slamming").
+    - You MUST end every single Video Prompt with exactly: "NO BGM, NO VOICE."
+
+    FORMAT RULES: [Image Prompt] | [Video Prompt]
+    1. Invent a specific character and copy-paste it at the beginning of EVERY Image prompt.
+    2. One '|' per line. NO TABLES.
+
+    Example Format:
+    A sad anthropomorphic little puppy wearing a torn red sweater, frantically sprinting out of a collapsing storm-ruined house, 8k | Shaky tracking shot, loud wooden crashing sounds, aggressive wind howling, rapid heavy muddy footsteps. NO BGM, NO VOICE.
+    """
+    
     text = smart_ai_request(system_prompt, user_prompt, "Generating Script")
     if text:
         valid_lines = [line.strip() for line in text.split('\n') if '|' in line and not line.strip().startswith('|') and '---' not in line]
@@ -57,16 +75,11 @@ def generate_ai_script(duration_sec, topic):
 
 def generate_ai_metadata(topic):
     system_prompt = "You are a strict YouTube SEO Expert."
-    
-    # 🔴 YAHAN MAGIC HAI: Strict Word & Character Limits!
     user_prompt = f"""Topic: '{topic}'.
     Create Advertiser-Friendly YouTube Shorts metadata.
-    
-    🚨 STRICT RULES:
-    1. TITLE: Must be exactly between 40 to 60 characters long. NOT longer.
-    2. DESC (Description): Must be exactly between 200 to 300 characters long.
-    3. TAGS: Provide EXACTLY 5 to 6 comma-separated tags. NO MORE.
-    
+    1. TITLE: Exactly 40 to 60 characters long.
+    2. DESC (Description): Exactly 200 to 300 characters long.
+    3. TAGS: Exactly 5 to 6 comma-separated tags.
     Format:
     TITLE: [Title]
     DESC: [Description]
