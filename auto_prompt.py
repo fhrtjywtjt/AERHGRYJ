@@ -47,31 +47,37 @@ def smart_ai_request(system_prompt, user_prompt, description):
 def generate_ai_script(duration_sec, topic):
     target_scenes = max(2, math.ceil(int(duration_sec) / 5))
     
-    # 🔴 AI ko strict kiya hai ki bakwaas na kare
-    system_prompt = "You are a Cinematic Director. Output ONLY the requested format. NO intros, NO explanations, NO markdown tables, NO status reports. JUST THE SCENES."
+    system_prompt = "You are a Master Storyteller and Cinematic Director. Output ONLY the requested format. NO intros, NO tables, NO markdown. JUST THE SCENES."
     
+    # 🔴 YAHAN MAGIC HAI: VISUAL STORYTELLING ARC ADDED
     user_prompt = f"""Task: Create a highly engaging, emotional story based on this idea: "{topic}".
     Break this into exactly {target_scenes} scenes for a {duration_sec}-second short video.
 
+    🚨 VISUAL STORYTELLING RULES (CRITICAL):
+    - The sequence of scenes MUST tell a complete, easy-to-understand story from beginning to end WITHOUT words.
+    - ACT 1 (The Hook/Context): Start by showing WHY they are in this situation. Use visual clues (e.g., looking at a locked door, being chased away by silhouettes, dropping a torn photograph of a lost family).
+    - ACT 2 (The Struggle): Show their emotional pain, rejection, and physical struggle.
+    - ACT 3 (The Ending/Twist): Give it a clear, powerful ending (a heartwarming rescue, finding an abandoned shelter, or a tragic but beautiful final moment).
+
     🚨 YOUTUBE MONETIZATION & SAFETY GUIDELINES:
-    - 100% Advertiser-Friendly. NO blood, fire, death, or violence. 
-    - Keep it sad but safe (tears, rain, loneliness).
+    - 100% Advertiser-Friendly. NO blood, fire, death, or violence. Keep it safe but deeply sad.
 
     FORMAT RULES (Strictly 2 parts separated by | ):
     [Image Prompt] | [Video Prompt]
 
     CRITICAL INSTRUCTION:
-    DO NOT output any tables. DO NOT output any checklist.
-    EVERY single line you output MUST contain EXACTLY ONE '|' symbol separating the image prompt and video prompt.
-
-    Example safe format:
-    A sad anthropomorphic little puppy wearing an oversized sweater, sitting on a rainy street, 8k | Fast zoom into face, loud thunder, heavy rain splashing. NO BGM.
+    1. Invent a specific character and copy-paste it at the beginning of EVERY Image prompt.
+    2. DO NOT output any tables. EVERY line MUST contain EXACTLY ONE '|'.
+    
+    Example of a complete story format:
+    A sad anthropomorphic little puppy wearing a torn red sweater, looking heartbroken at a closed door as a human shadow walks away, 8k | Slow zoom in, loud door slamming sound, heavy rain starting. NO BGM.
+    A sad anthropomorphic little puppy wearing a torn red sweater, walking alone in the dark cold street holding a small broken toy, 8k | Tracking shot, splashing puddles, soft whimpering. NO BGM.
+    A sad anthropomorphic little puppy wearing a torn red sweater, finding a warm glowing cardboard box and curling up inside it to sleep, 8k | Slow fade out, soft wind, peaceful breathing sound. NO BGM.
     """
     
-    print(f"\n🚀 Writing YouTube Monetization-Proof Script...")
+    print(f"\n🚀 Writing YouTube Monetization-Proof Visual Story...")
     text = smart_ai_request(system_prompt, user_prompt, "Generating Script")
     if text:
-        # 🔴 Ye filter table headers ko nikal dega
         valid_lines = [line.strip() for line in text.split('\n') if '|' in line and not line.strip().startswith('|') and '---' not in line]
         if valid_lines:
             return "\n".join(valid_lines[:target_scenes])
@@ -106,7 +112,7 @@ def process_stories():
     title, desc, tags = generate_ai_metadata(topic)
     with open(METADATA_FILE, "w", encoding="utf-8") as f: f.write(f"TITLE: {title}\nDESC: {desc}\nTAGS: {tags}")
     with open(STORY_FILE, "w", encoding="utf-8") as f: f.write("\n".join(topics[1:]) + "\n" if len(topics) > 1 else "")
-    print("🎉 AI Story Generated Without Tables!")
+    print("🎉 AI Visual Story Generated Successfully!")
 
 if __name__ == "__main__":
     process_stories()
