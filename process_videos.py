@@ -86,7 +86,7 @@ def main():
             "ffmpeg", "-y", 
             "-i", temp_output, 
             "-stream_loop", "-1", "-i", "bgm.wav", 
-            # Yahan maine volume 0.60 kiya hai, aur mix hone ke baad [mix]volume=2.0 lagaya hai taaki aawaz dabe nahi!
+            # Yahan maine volume 0.200 kiya hai, aur mix hone ke baad [mix]volume=2.0 lagaya hai taaki aawaz dabe nahi!
             "-filter_complex", "[0:a]volume=1.0[a1];[1:a]volume=0.60[a2];[a1][a2]amix=inputs=2:duration=first:dropout_transition=2[mix];[mix]volume=2.0[a]", 
             "-map", "0:v", "-map", "[a]", 
             "-c:v", "copy", "-c:a", "aac", "-b:a", "320k", final_output
