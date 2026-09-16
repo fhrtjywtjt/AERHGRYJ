@@ -146,10 +146,11 @@ jobs:
       with:
         python-version: '3.10'
         
+    # 👇 YAHAN LOCAL AI KI LIBRARIES ADD KI HAIN (transformers, torch, scipy) 👇
     - name: Install Dependencies
       run: |
         sudo apt-get update && sudo apt-get install -y ffmpeg zip
-        pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib requests
+        pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib requests transformers torch scipy
         
     - uses: actions/download-artifact@v4
       with:
@@ -167,10 +168,8 @@ jobs:
         GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
       run: python download_outro.py
 
-    # 👇 YEH HAI MUSIC GENERATION WALA NAYA STEP 👇
-    - name: Generate AI Background Music
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    # 👇 YEH HAI LOCAL AI MUSIC GENERATOR (No HF_TOKEN required!) 👇
+    - name: Generate Local AI Background Music
       run: python generate_music.py
         
     - name: Apply Smooth Fades & Merge with Outro
