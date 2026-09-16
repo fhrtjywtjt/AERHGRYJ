@@ -33,7 +33,7 @@ def smart_ai_request(system_prompt, user_prompt, description):
             response = client.chat.completions.create(
                 model=model_name,
                 messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                temperature=0.7
+                temperature=0.8
             )
             text = response.choices[0].message.content
             if text: return text
@@ -66,21 +66,26 @@ def generate_ai_script(duration_sec, topic):
     return None
 
 def generate_ai_metadata(topic):
-    system_prompt = "You are a YouTube SEO Expert and Music Director."
-    user_prompt = f"""Topic: '{topic}'.
-    Create Advertiser-Friendly YouTube Shorts metadata and a Background Music Prompt.
+    system_prompt = "You are a highly creative Music Director and YouTube SEO Expert."
+    
+    user_prompt = f"""Story Topic: '{topic}'.
+    Create Advertiser-Friendly YouTube Shorts metadata and a Custom Music Prompt.
+    
     1. TITLE: Exactly 40 to 60 characters long.
-    2. DESC (Description): Exactly 200 to 300 characters long.
+    2. DESC: Exactly 200 to 300 characters long.
     3. TAGS: Exactly 5 to 6 comma-separated tags.
-    4. MUSIC: A 5-8 word prompt for AI background music (e.g., 'sad emotional cinematic piano', 'fast aggressive drums action').
-    Format:
+    4. MUSIC: Read the Story Topic carefully. Write a 100% UNIQUE 5-8 word background music prompt matching the EXACT emotion of this specific story. 
+    DO NOT repeat old prompts. DO NOT be generic. 
+    (Example logic: If it's a flood -> "dark heavy rainy intense bass", If chasing -> "fast panic heartbeat aggressive drums", If sad dog -> "crying emotional slow lonely acoustic guitar").
+    
+    Format EXACTLY like this:
     TITLE: [Title]
     DESC: [Description]
-    TAGS: [tag1, tag2, tag3, tag4, tag5]
-    MUSIC: [Music Prompt]"""
+    TAGS: [tag1, tag2, tag3]
+    MUSIC: [Your 100% Unique Music Prompt Here]"""
     
     text = smart_ai_request(system_prompt, user_prompt, "Generating Metadata")
-    music_prompt = "cinematic ambient background score"
+    music_prompt = "dark emotional cinematic background score" 
     
     if text:
         try:
