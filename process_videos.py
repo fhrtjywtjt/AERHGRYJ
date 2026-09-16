@@ -79,14 +79,15 @@ def main():
 
     final_output = os.path.join(OUTPUT_DIR, "Final_4K_Monetizable_Short.mp4")
 
-    # BGM MIXING LOGIC
+    # BGM MIXING LOGIC (With 55% Volume)
     if os.path.exists("bgm.wav"):
-        print("🎵 AI BGM Detected! Mixing Music (30%) with Video Foley (100%)...")
+        print("🎵 AI BGM Detected! Mixing Music (55%) with Video Foley (100%)...")
         cmd = [
             "ffmpeg", "-y", 
             "-i", temp_output, 
             "-stream_loop", "-1", "-i", "bgm.wav", 
-            "-filter_complex", "[0:a]volume=1.0[a1];[1:a]volume=0.30[a2];[a1][a2]amix=inputs=2:duration=first:dropout_transition=2[a]", 
+            # 👇 Yahan volume 0.30 se 0.55 kar diya gaya hai 👇
+            "-filter_complex", "[0:a]volume=1.0[a1];[1:a]volume=0.55[a2];[a1][a2]amix=inputs=2:duration=first:dropout_transition=2[a]", 
             "-map", "0:v", "-map", "[a]", 
             "-c:v", "copy", "-c:a", "aac", "-b:a", "320k", final_output
         ]
