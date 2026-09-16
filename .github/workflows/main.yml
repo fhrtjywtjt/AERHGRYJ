@@ -1,10 +1,7 @@
 name: Advanced Cinematic AI Pipeline
 
 on:
-  schedule:
-    - cron: '0 20 * * *'
-    - cron: '0 22 * * *'
-  workflow_dispatch:
+  workflow_dispatch: # Sirf manual run hoga, taaki GitHub jaldi block na kare
 
 permissions:
   contents: write
@@ -26,14 +23,14 @@ jobs:
         pip install openai      
         python auto_prompt.py
       env:
-        OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}  # 🚨 OpenRouter Key
+        OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         
     - name: Commit updated story.txt
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add story.txt
-        git commit -m "Auto-removed processed story" || echo "No changes to commit"
+        git add story.txt metadata.txt prompts.txt
+        git commit -m "Auto-updated script files" || echo "No changes to commit"
         git push
         
     - uses: actions/upload-artifact@v4
@@ -53,14 +50,14 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
   # ==========================================
-  # STAGE 2: IMAGE GENERATION (MAX 5 PARALLEL)
+  # STAGE 2: IMAGE GENERATION (BING AI)
   # ==========================================
   stage2-images:
     needs: stage1-prompts
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 5
+      max-parallel: 1  # 🔴 SERVER BAN-PROOF: Isko 1 hi rakhna
       matrix:
         machine_id: ${{ fromJson(needs.stage1-prompts.outputs.matrix) }}
     steps:
@@ -91,14 +88,14 @@ jobs:
         path: scene_images/
 
   # ==========================================
-  # STAGE 3: VIDEO GENERATION (MAX 2 PARALLEL)
+  # STAGE 3: VIDEO GENERATION (UPSAMPLER AI)
   # ==========================================
   stage3-videos:
     needs: [stage1-prompts, stage2-images]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 2
+      max-parallel: 1 # 🔴 SERVER BAN-PROOF: Isko 1 hi rakhna
       matrix:
         machine_id: ${{ fromJson(needs.stage1-prompts.outputs.matrix) }}
     steps:
@@ -134,7 +131,7 @@ jobs:
         path: generated_videos/
 
   # ==========================================
-  # STAGE 4: FADE EDIT, ZIP & YOUTUBE UPLOAD
+  # STAGE 4: ADD OUTRO, MERGE & UPLOAD
   # ==========================================
   stage4-post-process:
     needs: stage3-videos
@@ -159,11 +156,17 @@ jobs:
         path: generated_videos/
         pattern: video_machine_*
         merge-multiple: true
+
+    - name: Download Random Outro from GDrive
+      env:
+        GDRIVE_JSON: ${{ secrets.GDRIVE_JSON }}
+        GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+      run: python download_outro.py
         
-    - name: Apply Smooth Fades & Merge
+    - name: Apply Smooth Fades & Merge with Outro
       run: python process_videos.py
       
-    - name: Create Downloadable ZIP
+    - name: Create Downloadable ZIP (Backup)
       run: zip -r Final_Video_Package.zip final_output/Final_4K_Monetizable_Short.mp4 metadata.txt
       
     - uses: actions/upload-artifact@v4
