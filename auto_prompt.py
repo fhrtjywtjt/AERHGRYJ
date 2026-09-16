@@ -43,30 +43,22 @@ def smart_ai_request(system_prompt, user_prompt, description):
 
 def generate_ai_script(duration_sec, topic):
     target_scenes = max(2, math.ceil(int(duration_sec) / 5))
-    
     system_prompt = "You are a highly aggressive Action-Drama Director. Output ONLY the requested format. NO tables. NO markdown."
-    
-    # 🔴 YAHAN MAGIC HAI: STRICT AUDIO BAN ADDED!
     user_prompt = f"""Task: Create a FAST-PACED, emotional action story based on: "{topic}". Exactly {target_scenes} scenes.
 
     🚨 HIGH-RETENTION VISUALS:
     - Constant Motion (Running, dodging, panicking). NO static scenes.
-    - Safe for Monetization (No blood/gore/fire/death). Use 'storm', 'shadows', 'ruins'.
+    - Safe for Monetization. Use 'storm', 'shadows', 'ruins'.
 
-    🚨 AUDIO RULES (STRICTLY ENFORCED - READ CAREFULLY):
-    - NO BGM. NO MUSIC. DO NOT write words like "piano", "violin", "orchestral", "music", "melody", "song", or "soundtrack".
-    - NO VOICE. DO NOT write "speak", "talk", "voice", or "dialogue".
-    - ONLY HIGH-VOLUME FOLEY SOUND EFFECTS (e.g., "Loud water splashing, heavy rapid panting, loud muddy footsteps, aggressive wind howling, violent door slamming").
-    - You MUST end every single Video Prompt with exactly: "NO BGM, NO VOICE."
+    🚨 AUDIO RULES:
+    - NO BGM. NO VOICE.
+    - ONLY HIGH-VOLUME FOLEY SOUND EFFECTS (e.g., "Loud water splashing, heavy rapid panting").
+    - End every Video Prompt with exactly: "NO BGM, NO VOICE."
 
     FORMAT RULES: [Image Prompt] | [Video Prompt]
     1. Invent a specific character and copy-paste it at the beginning of EVERY Image prompt.
     2. One '|' per line. NO TABLES.
-
-    Example Format:
-    A sad anthropomorphic little puppy wearing a torn red sweater, frantically sprinting out of a collapsing storm-ruined house, 8k | Shaky tracking shot, loud wooden crashing sounds, aggressive wind howling, rapid heavy muddy footsteps. NO BGM, NO VOICE.
     """
-    
     text = smart_ai_request(system_prompt, user_prompt, "Generating Script")
     if text:
         valid_lines = [line.strip() for line in text.split('\n') if '|' in line and not line.strip().startswith('|') and '---' not in line]
@@ -74,25 +66,36 @@ def generate_ai_script(duration_sec, topic):
     return None
 
 def generate_ai_metadata(topic):
-    system_prompt = "You are a strict YouTube SEO Expert."
+    system_prompt = "You are a YouTube SEO Expert and Music Director."
     user_prompt = f"""Topic: '{topic}'.
-    Create Advertiser-Friendly YouTube Shorts metadata.
+    Create Advertiser-Friendly YouTube Shorts metadata and a Background Music Prompt.
     1. TITLE: Exactly 40 to 60 characters long.
     2. DESC (Description): Exactly 200 to 300 characters long.
     3. TAGS: Exactly 5 to 6 comma-separated tags.
+    4. MUSIC: A 5-8 word prompt for AI background music (e.g., 'sad emotional cinematic piano', 'fast aggressive drums action').
     Format:
     TITLE: [Title]
     DESC: [Description]
-    TAGS: [tag1, tag2, tag3, tag4, tag5]"""
+    TAGS: [tag1, tag2, tag3, tag4, tag5]
+    MUSIC: [Music Prompt]"""
     
     text = smart_ai_request(system_prompt, user_prompt, "Generating Metadata")
+    music_prompt = "cinematic ambient background score"
+    
     if text:
         try:
             title = re.search(r"TITLE:\s*(.*)", text).group(1).strip()
             desc = re.search(r"DESC:\s*([\s\S]*?)TAGS:", text).group(1).strip()
             tags = re.search(r"TAGS:\s*(.*)", text).group(1).strip()
+            music_prompt = re.search(r"MUSIC:\s*(.*)", text).group(1).strip()
+            
+            with open("music_prompt.txt", "w", encoding="utf-8") as f:
+                f.write(music_prompt)
             return title, desc, tags
         except: pass
+        
+    with open("music_prompt.txt", "w", encoding="utf-8") as f:
+        f.write(music_prompt)
     return "Heart Touching Emotional Story 😭", "A very sad emotional story about life.", "shorts, sad, story, emotional, viral"
 
 def process_stories():
@@ -102,9 +105,11 @@ def process_stories():
     topics = [t.strip() for t in content.split("\n") if t.strip()]
     parts = topics[0].split("|")
     duration_sec, topic = (int(re.search(r'\d+', parts[0]).group()), parts[1].strip()) if len(parts) > 1 else (30, topics[0])
+    
     ai_output = generate_ai_script(duration_sec, topic)
     if not ai_output: sys.exit(1)
     with open(PROMPT_FILE, "w", encoding="utf-8") as f: f.write(ai_output + "\n")
+    
     title, desc, tags = generate_ai_metadata(topic)
     with open(METADATA_FILE, "w", encoding="utf-8") as f: f.write(f"TITLE: {title}\nDESC: {desc}\nTAGS: {tags}")
     with open(STORY_FILE, "w", encoding="utf-8") as f: f.write("\n".join(topics[1:]) + "\n" if len(topics) > 1 else "")
