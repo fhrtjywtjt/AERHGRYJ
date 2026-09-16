@@ -1,7 +1,10 @@
 name: Advanced Cinematic AI Pipeline
 
 on:
-  workflow_dispatch: # Manual run
+  schedule:
+    - cron: '30 23 * * *'  # Roz Subah 5:00 Baje (IST) chalega
+    - cron: '30 14 * * *'  # Roz Shaam 8:00 Baje (IST) chalega
+  workflow_dispatch:       # Aap jab chaho manual button dabakar bhi chala sakte ho
 
 permissions:
   contents: write
@@ -57,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 5  # 🔴 Wapas 5 kar diya hai (5 Image ek sath banengi!)
+      max-parallel: 5
       matrix:
         machine_id: ${{ fromJson(needs.stage1-prompts.outputs.matrix) }}
     steps:
@@ -95,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 2 # 🔴 Wapas 2 kar diya hai (2 Video ek sath banengi!)
+      max-parallel: 2
       matrix:
         machine_id: ${{ fromJson(needs.stage1-prompts.outputs.matrix) }}
     steps:
