@@ -47,43 +47,39 @@ def smart_ai_request(system_prompt, user_prompt, description):
 def generate_ai_script(duration_sec, topic):
     target_scenes = max(2, math.ceil(int(duration_sec) / 5))
     
-    # 🔴 YAHAN MAGIC HAI: AI ko YouTube Policy Expert bana diya
-    system_prompt = "You are a top-tier YouTube Monetization Expert and Cinematic Director. You deeply understand YouTube's Community Guidelines and Advertiser-Friendly policies."
+    # 🔴 AI ko strict kiya hai ki bakwaas na kare
+    system_prompt = "You are a Cinematic Director. Output ONLY the requested format. NO intros, NO explanations, NO markdown tables, NO status reports. JUST THE SCENES."
     
     user_prompt = f"""Task: Create a highly engaging, emotional story based on this idea: "{topic}".
     Break this into exactly {target_scenes} scenes for a {duration_sec}-second short video.
 
-    🚨 YOUTUBE MONETIZATION & SAFETY GUIDELINES (CRITICAL):
-    - The story MUST be 100% Advertiser-Friendly and Family-Friendly.
-    - STRICTLY PROHIBITED: Death, gore, blood, real-world tragedies, fire, weapons, abuse, or disturbing visuals.
-    - Create sadness through EMOTION (loneliness, lost items, shivering, crying, separation, hope) instead of tragedy.
-    - Make sure image generation AIs (like Bing) will not block the prompts. Use safe words.
-
-    CRITICAL RULE FOR CHARACTER CONSISTENCY:
-    1. First, invent a detailed, highly SAFE character design (e.g., "A sad anthropomorphic little puppy with droopy eyes wearing an oversized sweater").
-    2. Copy-paste this EXACT description at the beginning of EVERY Image Prompt.
+    🚨 YOUTUBE MONETIZATION & SAFETY GUIDELINES:
+    - 100% Advertiser-Friendly. NO blood, fire, death, or violence. 
+    - Keep it sad but safe (tears, rain, loneliness).
 
     FORMAT RULES (Strictly 2 parts separated by | ):
     [Image Prompt] | [Video Prompt]
 
-    1. Image Prompt: [EXACT Character Description] + [Safe Emotional Action] + "8k resolution, cinematic lighting, highly detailed".
-    2. Video Prompt: [CAMERA MOTION] + [LOUD FOLEY SOUND EFFECTS (e.g., Loud thunder, heavy rain, soft crying)]. NO BGM.
+    CRITICAL INSTRUCTION:
+    DO NOT output any tables. DO NOT output any checklist.
+    EVERY single line you output MUST contain EXACTLY ONE '|' symbol separating the image prompt and video prompt.
 
     Example safe format:
-    A sad anthropomorphic little puppy with droopy eyes wearing an oversized sweater, sitting on a rainy street corner, 8k resolution, cinematic lighting | Fast zoom into face, loud thunder crack, heavy rain splashing, soft whimpering sound. NO BGM.
+    A sad anthropomorphic little puppy wearing an oversized sweater, sitting on a rainy street, 8k | Fast zoom into face, loud thunder, heavy rain splashing. NO BGM.
     """
     
     print(f"\n🚀 Writing YouTube Monetization-Proof Script...")
     text = smart_ai_request(system_prompt, user_prompt, "Generating Script")
     if text:
-        valid_lines = [line.strip() for line in text.split('\n') if '|' in line]
+        # 🔴 Ye filter table headers ko nikal dega
+        valid_lines = [line.strip() for line in text.split('\n') if '|' in line and not line.strip().startswith('|') and '---' not in line]
         if valid_lines:
             return "\n".join(valid_lines[:target_scenes])
     return None
 
 def generate_ai_metadata(topic):
     system_prompt = "You are a YouTube SEO Expert."
-    user_prompt = f"Topic: '{topic}'.\nCreate viral YouTube Shorts TITLE, DESC, and TAGS. Keep it perfectly Advertiser-Friendly.\nFormat:\nTITLE: [Title]\nDESC: [Description]\nTAGS: [tag1, tag2]"
+    user_prompt = f"Topic: '{topic}'.\nCreate viral YouTube Shorts TITLE, DESC, and TAGS.\nFormat:\nTITLE: [Title]\nDESC: [Description]\nTAGS: [tag1, tag2]"
     text = smart_ai_request(system_prompt, user_prompt, "Generating Metadata")
     if text:
         try:
@@ -110,7 +106,7 @@ def process_stories():
     title, desc, tags = generate_ai_metadata(topic)
     with open(METADATA_FILE, "w", encoding="utf-8") as f: f.write(f"TITLE: {title}\nDESC: {desc}\nTAGS: {tags}")
     with open(STORY_FILE, "w", encoding="utf-8") as f: f.write("\n".join(topics[1:]) + "\n" if len(topics) > 1 else "")
-    print("🎉 AI Story & Monetization-Proof Prompts Generated!")
+    print("🎉 AI Story Generated Without Tables!")
 
 if __name__ == "__main__":
     process_stories()
