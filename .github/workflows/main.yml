@@ -1,7 +1,7 @@
 name: Advanced Cinematic AI Pipeline
 
 on:
-  workflow_dispatch: # Sirf manual run hoga, taaki GitHub jaldi block na kare
+  workflow_dispatch: # Manual run
 
 permissions:
   contents: write
@@ -50,14 +50,14 @@ jobs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
 
   # ==========================================
-  # STAGE 2: IMAGE GENERATION (BING AI)
+  # STAGE 2: IMAGE GENERATION (MAX 5 PARALLEL)
   # ==========================================
   stage2-images:
     needs: stage1-prompts
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 1  # 🔴 SERVER BAN-PROOF: Isko 1 hi rakhna
+      max-parallel: 5  # 🔴 Wapas 5 kar diya hai (5 Image ek sath banengi!)
       matrix:
         machine_id: ${{ fromJson(needs.stage1-prompts.outputs.matrix) }}
     steps:
@@ -88,14 +88,14 @@ jobs:
         path: scene_images/
 
   # ==========================================
-  # STAGE 3: VIDEO GENERATION (UPSAMPLER AI)
+  # STAGE 3: VIDEO GENERATION (MAX 2 PARALLEL)
   # ==========================================
   stage3-videos:
     needs: [stage1-prompts, stage2-images]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      max-parallel: 1 # 🔴 SERVER BAN-PROOF: Isko 1 hi rakhna
+      max-parallel: 2 # 🔴 Wapas 2 kar diya hai (2 Video ek sath banengi!)
       matrix:
         machine_id: ${{ fromJson(needs.stage1-prompts.outputs.matrix) }}
     steps:
