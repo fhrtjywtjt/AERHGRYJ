@@ -32,7 +32,7 @@ jobs:
       run: |
         git config user.name "github-actions[bot]"
         git config user.email "github-actions[bot]@users.noreply.github.com"
-        git add story.txt metadata.txt prompts.txt
+        git add story.txt metadata.txt prompts.txt music_prompt.txt
         git commit -m "Auto-updated script files" || echo "No changes to commit"
         git push
         
@@ -42,6 +42,7 @@ jobs:
         path: |
           prompts.txt
           metadata.txt
+          music_prompt.txt
           
     - id: set-matrix
       run: |
@@ -148,7 +149,7 @@ jobs:
     - name: Install Dependencies
       run: |
         sudo apt-get update && sudo apt-get install -y ffmpeg zip
-        pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib
+        pip install google-api-python-client google-auth-httplib2 google-auth-oauthlib requests
         
     - uses: actions/download-artifact@v4
       with:
@@ -165,6 +166,12 @@ jobs:
         GDRIVE_JSON: ${{ secrets.GDRIVE_JSON }}
         GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
       run: python download_outro.py
+
+    # 👇 YEH HAI MUSIC GENERATION WALA NAYA STEP 👇
+    - name: Generate AI Background Music
+      env:
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      run: python generate_music.py
         
     - name: Apply Smooth Fades & Merge with Outro
       run: python process_videos.py
