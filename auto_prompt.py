@@ -19,33 +19,30 @@ if not API_KEY:
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
 def get_live_free_models():
+    # Yeh function best free models ki list nikalega
+    models_list = []
     try:
         req = urllib.request.Request("https://openrouter.ai/api/v1/models")
         with urllib.request.urlopen(req) as response:
             data = json.loads(response.read().decode('utf-8'))
-        free_models = [m["id"] for m in data.get("data", []) if m.get("pricing", {}).get("prompt") == "0" and m.get("pricing", {}).get("completion") == "0"]
-        return free_models[:5] if free_models else ["google/gemini-2.0-flash-lite-preview-02-05:free"]
+        models_list = [m["id"] for m in data.get("data", []) if m.get("pricing", {}).get("prompt") == "0" and m.get("pricing", {}).get("completion") == "0"]
     except:
-        return ["google/gemini-2.0-flash-lite-preview-02-05:free", "meta-llama/llama-3.2-3b-instruct:free"]
-
-def smart_ai_request(system_prompt, user_prompt, description):
-    free_models = get_live_free_models()
-    for model_name in free_models:
-        try:
-            print(f"🔄 Trying model: {model_name} for {description}...")
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                temperature=0.8
-            )
-            text = response.choices[0].message.content
-            if text: 
-                print(f"✅ Success with {model_name}!")
-                return text
-        except Exception as e:
-            print(f"⚠️ Model {model_name} failed: {e}")
-            time.sleep(2)
-    return None
+        pass
+        
+    # Guaranteed Fallback Models (Agar API se list na mile)
+    fallbacks = [
+        "google/gemini-2.0-flash-lite-preview-02-05:free", 
+        "meta-llama/llama-3.3-70b-instruct:free",
+        "cognitivecomputations/dolphin3.0-r1-mistral-24b:free",
+        "meta-llama/llama-3.2-3b-instruct:free"
+    ]
+    
+    # Dono lists ko combine kar dete hain
+    for fb in fallbacks:
+        if fb not in models_list:
+            models_list.append(fb)
+            
+    return models_list
 
 def generate_ai_script(duration_sec, topic):
     target_scenes = max(2, math.ceil(int(duration_sec) / 5))
@@ -54,37 +51,65 @@ def generate_ai_script(duration_sec, topic):
     user_prompt = f"""Task: Create a COMPLETE, highly engaging, and 100% YOUTUBE-SAFE visual story based on: "{topic}".
     Total Duration: {duration_sec} seconds. Generate EXACTLY {target_scenes} scenes.
 
+    🚨 5-SECOND HOOK (CRITICAL):
+    - The VERY FIRST SCENE must be visually shocking, mysterious, highly emotional, or fast-action to instantly GRAB the viewer's attention. Make them stop scrolling!
+
+    🚨 DYNAMIC MOOD & GENRE:
+    - Match the lighting, facial expressions, and foley audio exactly to the mood of the topic (e.g., Sad=gloomy/crying, Action=intense/fast, Romantic=sunset/warm, Horror=dark/nervous).
+
     🚨 YOUTUBE RULES: NO blood, NO weapons, NO gore. Family-Friendly only.
-    🚨 STORY ARC: Scene 1 introduces character/setting. Middle is action/struggle. Last Scene is a clear ENDING/RESOLUTION.
+    🚨 STORY ARC: Scene 1 is the HOOK. Middle is action/struggle. Last Scene is a clear ENDING/RESOLUTION.
     🚨 BACKGROUND CONSISTENCY: Invent ONE specific character and ONE specific background. Keep them the SAME in every prompt.
     🚨 AUDIO RULES: ONLY Foley sounds. End every video prompt with "NO BGM, NO VOICE."
 
-    FORMAT EXACTLY LIKE THIS EXAMPLE (Do not use bullet points, numbers, or markdown tables):
-    A fluffy white wolf pup named Leo in a snowy mountain | Loud wind howling, heavy snow crunching. NO BGM, NO VOICE.
+    FORMAT EXACTLY LIKE THIS EXAMPLE (Use the `|` symbol):
+    A fluffy white wolf pup named Leo in a snowy mountain looking shocked | Loud wind howling, sudden snow crunching. NO BGM, NO VOICE.
     A fluffy white wolf pup named Leo in a snowy mountain slipping on ice | Rapid sliding sounds, panicked scratching. NO BGM, NO VOICE.
 
     START YOUR RESPONSE DIRECTLY WITH THE FIRST SCENE:"""
     
-    text = smart_ai_request(system_prompt, user_prompt, "Generating Script")
-    
-    if text:
-        print("\n--- RAW AI OUTPUT ---")
-        print(text)
-        print("---------------------\n")
-        
-        valid_lines = []
-        for line in text.split('\n'):
-            line = line.strip()
-            # Remove any bullet points, numbers, dashes at the start (e.g., "1. ", "- ", "* ")
-            line = re.sub(r'^[\d\.\-\*\s]+', '', line)
-            
-            # Check if it has a pipe and is not a markdown table separator
-            if '|' in line and '---|' not in line and not line.startswith('|'):
-                valid_lines.append(line)
+    models = get_live_free_models()
+    attempt = 1
+    max_attempts = 10 # Script jab tak nahi banegi, 10 baar tak alag-alag model try karega!
+
+    for model_name in models:
+        for _ in range(2): # Ek model ko 2 baar mauka dega
+            if attempt > max_attempts:
+                print("❌ ERROR: 10 attempts ho gaye par kisi AI ne sahi format nahi diya. Exiting.")
+                return None
                 
-        if valid_lines: 
-            return "\n".join(valid_lines[:target_scenes])
-            
+            print(f"🔄 Attempt {attempt}/{max_attempts} - Trying model: {model_name}...")
+            try:
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+                    temperature=0.8
+                )
+                text = response.choices[0].message.content
+                
+                if text:
+                    print("\n--- RAW AI OUTPUT ---")
+                    print(text)
+                    print("---------------------\n")
+                    
+                    valid_lines = []
+                    for line in text.split('\n'):
+                        line = line.strip()
+                        line = re.sub(r'^[\d\.\-\*\s]+', '', line) # Galti se aaye numbers hidayega
+                        if '|' in line and '---|' not in line and not line.startswith('|'):
+                            valid_lines.append(line)
+                            
+                    if len(valid_lines) > 0:
+                        print(f"✅ Success! Hamein {len(valid_lines)} valid scenes mil gaye from {model_name}.")
+                        return "\n".join(valid_lines[:target_scenes])
+                    else:
+                        print(f"⚠️ AI ne script di, par format galat tha (No `|` found). Retrying...")
+            except Exception as e:
+                print(f"⚠️ Model {model_name} failed/crashed: {e}. Switching model...")
+                time.sleep(2)
+                
+            attempt += 1
+
     return None
 
 def generate_ai_metadata(topic):
@@ -97,21 +122,34 @@ def generate_ai_metadata(topic):
     TAGS: [tag1, tag2, tag3]
     MUSIC: [Unique 5-8 word music prompt]"""
     
-    text = smart_ai_request(system_prompt, user_prompt, "Generating Metadata")
+    models = get_live_free_models()
     music_prompt = "dark emotional cinematic background score" 
     
-    if text:
+    # Metadata ke liye bhi loop taaki error na aaye
+    for model_name in models[:3]: # First 3 models ko try karega
         try:
+            print(f"🎵 Generating Metadata using {model_name}...")
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+                temperature=0.8
+            )
+            text = response.choices[0].message.content
+            
             title = re.search(r"TITLE:\s*(.*)", text).group(1).strip()
             desc = re.search(r"DESC:\s*([\s\S]*?)TAGS:", text).group(1).strip()
             tags = re.search(r"TAGS:\s*(.*)", text).group(1).strip()
             music_prompt = re.search(r"MUSIC:\s*(.*)", text).group(1).strip()
+            
             with open("music_prompt.txt", "w", encoding="utf-8") as f: f.write(music_prompt)
+            print("✅ Metadata successfully generated!")
             return title, desc, tags
-        except: pass
-        
+        except:
+            time.sleep(1)
+            
+    # Agar kisi bhi API se metadata na bane toh yeh default de dega (Fail nahi hoga)
     with open("music_prompt.txt", "w", encoding="utf-8") as f: f.write(music_prompt)
-    return "Heart Touching Emotional Story 😭", "A very sad emotional story about life.", "shorts, sad, story, emotional, viral"
+    return "Amazing Viral Story 🔥", "Watch this amazing story till the end!", "shorts, trending, story, viral"
 
 def process_stories():
     if not os.path.exists(STORY_FILE):
@@ -133,7 +171,7 @@ def process_stories():
     ai_output = generate_ai_script(duration_sec, topic)
     
     if not ai_output:
-        print("❌ ERROR: AI se script generate nahi ho payi ya AI ne galat format diya.")
+        print("❌ CRITICAL ERROR: 10 attempts ke baad bhi AI fail ho gaya. Process stopped.")
         sys.exit(1)
         
     with open(PROMPT_FILE, "w", encoding="utf-8") as f: f.write(ai_output + "\n")
@@ -141,7 +179,7 @@ def process_stories():
     title, desc, tags = generate_ai_metadata(topic)
     with open(METADATA_FILE, "w", encoding="utf-8") as f: f.write(f"TITLE: {title}\nDESC: {desc}\nTAGS: {tags}")
     with open(STORY_FILE, "w", encoding="utf-8") as f: f.write("\n".join(topics[1:]) + "\n" if len(topics) > 1 else "")
-    print("✅ All processes completed successfully!")
+    print("🚀 All processes completed successfully!")
 
 if __name__ == "__main__":
     process_stories()
