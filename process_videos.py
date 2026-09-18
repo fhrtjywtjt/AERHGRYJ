@@ -24,20 +24,21 @@ def process_clip(idx, text_overlay):
         print(f"⚠️ Video {v_path} not found. Skipping scene {idx}...")
         return None
 
+    # Text overlay logic
     safe_text = text_overlay.replace("'", "").replace(":", "")
     drawtext = f"drawtext=fontfile={FONT_FILE}:text='{safe_text}':fontcolor=white:fontsize=65:x=(w-text_w)/2:y=(h-text_h)/2+200:bordercolor=black:borderw=4"
     
-    # 🔴 FIX: No stream_loop! Video directly processes fast with its own audio.
+    # 🔴 Yahan ffmpeg sirf video par text lagayega aur Upsampler ki original audio ko copy kar lega (-c:a copy)
     cmd = [
         "ffmpeg", "-y", 
         "-i", v_path, 
         "-vf", f"scale=1080:1920:flags=lanczos:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p,{drawtext}", 
         "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", 
-        "-c:a", "aac", "-b:a", "192k", 
+        "-c:a", "copy", # Audio waise ki waise hi rahegi jaisi upsampler ne di
         out_path
     ]
     
-    print(f"⚙️ Rendering Scene {idx} (Video + Built-in Voice + Text)...")
+    print(f"⚙️ Rendering Scene {idx} (Built-in Upsampler Voice + Text)...")
     subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return out_path
 
@@ -53,10 +54,7 @@ def main():
                     texts[i] = parts[2].strip()
 
     video_files = [f for f in os.listdir(INPUT_DIR) if f.startswith("video_") and f.endswith(".mp4")]
-    if not video_files:
-        print("❌ No videos found to process!")
-        return
-
+    if not video_files: return
     video_files.sort(key=lambda x: int(re.search(r'\d+', x).group()))
     
     processed_clips = []
@@ -65,9 +63,7 @@ def main():
         clip = process_clip(idx, texts.get(idx, ""))
         if clip: processed_clips.append(clip)
 
-    if not processed_clips:
-        print("❌ No valid clips rendered!")
-        return
+    if not processed_clips: return
 
     list_path = "list.txt"
     with open(list_path, "w") as f:
@@ -79,8 +75,9 @@ def main():
 
     final_output = os.path.join(OUTPUT_DIR, "Final_Agency_Reel.mp4")
 
+    # BGM mix karna (Upsampler Voice ki volume 2.0 (Tez) rakhi hai, BGM 0.1 (Halka))
     if os.path.exists("bgm.wav"):
-        print("🎵 Mixing BGM with Character Voice...")
+        print("🎵 Mixing BGM with Upsampler Voice...")
         cmd = [
             "ffmpeg", "-y", "-i", temp_output, "-stream_loop", "-1", "-i", "bgm.wav", 
             "-filter_complex", "[0:a]volume=2.0[a1];[1:a]volume=0.1[a2];[a1][a2]amix=inputs=2:duration=first:dropout_transition=2[a]", 
@@ -90,7 +87,7 @@ def main():
     else:
         os.rename(temp_output, final_output)
     
-    print("🎉 FINAL INSTAGRAM REEL IS READY!")
+    print("🎉 FINAL REEL IS READY!")
 
 if __name__ == "__main__": 
     main()
