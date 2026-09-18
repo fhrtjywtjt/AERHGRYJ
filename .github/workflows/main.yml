@@ -1,3 +1,13 @@
+name: Instagram Agency Automator
+
+on:
+  schedule:
+    - cron: '30 03 * * *'
+    - cron: '30 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
   # ==========================================
   # STAGE 4: MUSIC, EDITING & IG UPLOAD
   # ==========================================
