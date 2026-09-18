@@ -11,10 +11,9 @@ STORY_FILE = "story.txt"
 PROMPT_FILE = "prompts.txt"
 METADATA_FILE = "metadata.txt"
 
-# 1. API KEY CHECK
 API_KEY = os.getenv("OPENROUTER_API_KEY")
 if not API_KEY:
-    print("❌ ERROR: OPENROUTER_API_KEY is missing! GitHub Secrets mein key add karo.")
+    print("❌ ERROR: OPENROUTER_API_KEY is missing!")
     sys.exit(1)
 
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
@@ -50,34 +49,42 @@ def smart_ai_request(system_prompt, user_prompt, description):
 
 def generate_ai_script(duration_sec, topic):
     target_scenes = max(2, math.ceil(int(duration_sec) / 5))
-    system_prompt = "You are a Master Visual Storyteller and a Strict YouTube Compliance Officer. Output ONLY the requested format. NO tables. NO markdown."
+    system_prompt = "You are a Master Visual Storyteller. You strictly follow instructions. Output ONLY the raw prompt lines. NO tables, NO intro, NO outro."
     
     user_prompt = f"""Task: Create a COMPLETE, highly engaging, and 100% YOUTUBE-SAFE visual story based on: "{topic}".
-    Total Video Duration: {duration_sec} seconds.
-    You MUST generate EXACTLY {target_scenes} scenes.
+    Total Duration: {duration_sec} seconds. Generate EXACTLY {target_scenes} scenes.
 
-    🚨 YOUTUBE STRICT SAFETY RULES:
-    - STRICTLY NO blood, NO weapons, NO gore, NO extreme violence.
-    - Must be 100% Family-Friendly.
+    🚨 YOUTUBE RULES: NO blood, NO weapons, NO gore. Family-Friendly only.
+    🚨 STORY ARC: Scene 1 introduces character/setting. Middle is action/struggle. Last Scene is a clear ENDING/RESOLUTION.
+    🚨 BACKGROUND CONSISTENCY: Invent ONE specific character and ONE specific background. Keep them the SAME in every prompt.
+    🚨 AUDIO RULES: ONLY Foley sounds. End every video prompt with "NO BGM, NO VOICE."
 
-    🚨 PERFECT STORY ARC:
-    - Scene 1: Introduce character and background.
-    - Middle: Struggle/Action.
-    - Last Scene: Clear ENDING.
+    FORMAT EXACTLY LIKE THIS EXAMPLE (Do not use bullet points, numbers, or markdown tables):
+    A fluffy white wolf pup named Leo in a snowy mountain | Loud wind howling, heavy snow crunching. NO BGM, NO VOICE.
+    A fluffy white wolf pup named Leo in a snowy mountain slipping on ice | Rapid sliding sounds, panicked scratching. NO BGM, NO VOICE.
 
-    🚨 BACKGROUND & CHARACTER CONSISTENCY:
-    - Invent a specific character and specific location.
-    - KEEP THEM SAME in every prompt. Do not change backgrounds randomly.
-
-    🚨 AUDIO: NO BGM. NO VOICE. ONLY FOLEY SOUNDS. End video prompt with "NO BGM, NO VOICE."
-
-    FORMAT: [Image Prompt] | [Video Prompt]
-    """
+    START YOUR RESPONSE DIRECTLY WITH THE FIRST SCENE:"""
     
     text = smart_ai_request(system_prompt, user_prompt, "Generating Script")
+    
     if text:
-        valid_lines = [line.strip() for line in text.split('\n') if '|' in line and not line.strip().startswith('|') and '---' not in line]
-        if valid_lines: return "\n".join(valid_lines[:target_scenes])
+        print("\n--- RAW AI OUTPUT ---")
+        print(text)
+        print("---------------------\n")
+        
+        valid_lines = []
+        for line in text.split('\n'):
+            line = line.strip()
+            # Remove any bullet points, numbers, dashes at the start (e.g., "1. ", "- ", "* ")
+            line = re.sub(r'^[\d\.\-\*\s]+', '', line)
+            
+            # Check if it has a pipe and is not a markdown table separator
+            if '|' in line and '---|' not in line and not line.startswith('|'):
+                valid_lines.append(line)
+                
+        if valid_lines: 
+            return "\n".join(valid_lines[:target_scenes])
+            
     return None
 
 def generate_ai_metadata(topic):
@@ -107,16 +114,14 @@ def generate_ai_metadata(topic):
     return "Heart Touching Emotional Story 😭", "A very sad emotional story about life.", "shorts, sad, story, emotional, viral"
 
 def process_stories():
-    # 2. STORY FILE EXIST CHECK
     if not os.path.exists(STORY_FILE):
         print(f"❌ ERROR: {STORY_FILE} file not found!")
         sys.exit(1)
         
     with open(STORY_FILE, "r", encoding="utf-8") as f: content = f.read().strip()
     
-    # 3. STORY FILE EMPTY CHECK
     if not content:
-        print(f"❌ ERROR: {STORY_FILE} is empty. Koi topic nahi mila!")
+        print(f"❌ ERROR: {STORY_FILE} is empty!")
         sys.exit(1)
         
     topics = [t.strip() for t in content.split("\n") if t.strip()]
@@ -127,9 +132,8 @@ def process_stories():
     
     ai_output = generate_ai_script(duration_sec, topic)
     
-    # 4. AI OUTPUT CHECK
     if not ai_output:
-        print("❌ ERROR: AI se script generate nahi ho payi (Response None aaya).")
+        print("❌ ERROR: AI se script generate nahi ho payi ya AI ne galat format diya.")
         sys.exit(1)
         
     with open(PROMPT_FILE, "w", encoding="utf-8") as f: f.write(ai_output + "\n")
