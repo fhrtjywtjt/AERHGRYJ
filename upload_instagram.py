@@ -8,14 +8,15 @@ VIDEO_FILE = "final_output/Final_Agency_Reel.mp4"
 META_FILE = "metadata.txt"
 
 def get_metadata():
-    caption = "Stop working manually. Get our YouTube Automation setup! DM 'GROW' for details."
+    caption = "Stop working manually. Get our YouTube Automation setup! DM 'GROW'."
     tags = "#YouTubeAutomation #PassiveIncome"
     if os.path.exists(META_FILE):
         with open(META_FILE, "r", encoding="utf-8") as f:
             content = f.read()
             try:
-                caption = re.search(r"CAPTION:\s*(.*)", content).group(1).strip()
-                tags = re.search(r"TAGS:\s*(.*)", content).group(1).strip()
+                # 🔴 Naya Regex IG metadata padhne ke liye
+                caption = re.search(r"IG_CAPTION:\s*(.*)", content).group(1).strip()
+                tags = re.search(r"IG_TAGS:\s*(.*)", content).group(1).strip()
             except: pass
     return f"{caption}\n\n{tags}"
 
@@ -30,7 +31,6 @@ def upload_reel():
         print(f"❌ ERROR: Video file not found at {VIDEO_FILE}")
         return
 
-    # 1. Decode Base64 and find 'sessionid' from the Cookie JSON
     sessionid = None
     try:
         cookies_json = base64.b64decode(cookie_b64).decode("utf-8")
@@ -42,31 +42,25 @@ def upload_reel():
                 break
                 
         if not sessionid:
-            print("❌ ERROR: 'sessionid' nahi mila tumhari cookies mein. Nayi cookie export karo!")
+            print("❌ ERROR: 'sessionid' nahi mila cookies mein.")
             return
     except Exception as e:
         print(f"❌ ERROR parsing cookies: {e}")
         return
 
     final_caption = get_metadata()
-    print("🚀 Starting Instagram Auto-Upload via Instagrapi (Cookie Session)...")
+    print("🚀 Starting Instagram Auto-Upload...")
 
     cl = Client()
     try:
-        print("⏳ Logging into Instagram using Session ID...")
-        # 2. Login using the extracted sessionid
         cl.login_by_sessionid(sessionid)
-        print("✅ Login Successful from Cookies!")
-        
-        print("⏳ Uploading Reel... Please wait, this might take a minute.")
-        media = cl.clip_upload(
-            VIDEO_FILE,
-            final_caption
-        )
-        print(f"✅ BOOM! REEL UPLOADED SUCCESSFULLY! Media ID: {media.pk}")
-        
+        print("✅ IG Login Successful!")
+        media = cl.clip_upload(VIDEO_FILE, final_caption)
+        print(f"✅ REEL UPLOADED! Media ID: {media.pk}")
     except Exception as e:
         print(f"❌ Instagram Upload Failed: {e}")
+        # Custom Error trigger takki Github ko pata chale aur wo YT par chala jaye
+        raise e 
 
 if __name__ == "__main__":
     upload_reel()
