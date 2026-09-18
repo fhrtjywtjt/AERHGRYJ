@@ -40,24 +40,25 @@ def generate_anime_agency_script():
     system_prompt = """You are a Master Anime Director, Cinematographer, and a clever Marketer. 
     Output ONLY the requested raw format. NO tables, NO intro, NO markdown."""
 
-    user_prompt = """Task: Write a HIGHLY DETAILED, persuasive Anime Story Reel (around 1 to 1.5 minutes long) selling our YouTube Automation Service.
+    user_prompt = """Task: Write a HIGHLY DETAILED, persuasive Anime Story Reel selling our YouTube Automation Service.
 
     🚨 CRITICAL 5-SECOND RULE FOR AI (READ CAREFULLY):
     - Our video generator ONLY makes 5-SECOND CLIPS per scene.
-    - Therefore, the Voiceover Dialogue for EVERY SINGLE SCENE MUST be short enough to be spoken in 5 seconds (MAXIMUM 10 to 15 WORDS per scene).
-    - If you have a lot to say, DO NOT write long dialogues in one scene. Instead, break the story across MANY scenes (Generate 10 to 15 scenes total).
+    - Therefore, the Character Dialogue for EVERY SINGLE SCENE MUST be extremely short.
+    - STRICT LIMIT: MAXIMUM 5 TO 8 WORDS per scene! If it's longer, the video will cut out.
+    - Break the story across 10 to 15 scenes total.
 
     🚨 STORY & AGENCY PITCH RULES:
-    1. THE HOOK: Scene 1 must be an extreme 5-second hook (e.g., "Mera dost kal 1 lakh rupaye cash laya...").
-    2. THE DETAIL: Make the story interesting. Talk about the struggle of editing, failing algorithms, and how "Smart people outsource to Expert Teams". Build trust.
-    3. THE PRICING: Explain the value. Basic Plan ₹499/month (1 Video Daily), Pro Plan ₹999/month (2 Videos Daily). Make it sound like an absolute steal. Tell them to DM "GROW".
-    4. VISUAL CONSISTENCY: Invent ONE specific anime character and ONE background. Copy-paste this EXACT description into EVERY Image Prompt.
-    5. CAMERA & MOTION: Every video prompt MUST include "Character talking, lips moving, blinking" AND a "Dynamic Camera Angle" (e.g., Fast zoom, slow pan, tracking shot).
+    1. THE HOOK: Scene 1 must be an extreme hook (e.g., "Mera dost kal 1 lakh laya...").
+    2. THE DETAIL: Talk about the struggle of editing and failing algorithms. "Smart people outsource".
+    3. THE PRICING: Basic Plan ₹499/mo (1 Video Daily), Pro Plan ₹999/mo (2 Videos). DM "GROW".
+    4. VISUALS: Invent ONE specific anime character and ONE background. Put this in EVERY Image Prompt.
+    5. CAMERA: Every video prompt MUST include "Character talking, lips moving" AND a "Dynamic Camera Angle".
 
     🚨 FORMAT (4 columns separated by '|'):
-    [Image Prompt] | [Video Prompt (Include Camera Angle)] | [On-Screen Text] | [Voiceover Dialogue in Hindi (STRICTLY 10-15 WORDS MAX)]
+    [Image Prompt] | [Video Prompt (Camera Angle)] | [On-Screen Text] | [Dialogue in Hindi (STRICTLY 5-8 WORDS)]
 
-    Generate 10 to 15 scenes to make a detailed, convincing story. Keep dialogues SHORT per scene. Start immediately:"""
+    Start immediately:"""
 
     models = get_live_free_models()
     
@@ -74,10 +75,9 @@ def generate_anime_agency_script():
             
             if text:
                 valid_lines = [line.strip() for line in text.split('\n') if line.count('|') >= 3]
-                # Ab hum 5 nahi, balki 10 se 15 scenes tak allow karenge (matlab 1 min+ video)
                 if len(valid_lines) >= 8:
                     print(f"✅ Detailed Script Generated Successfully! (Total Scenes: {len(valid_lines)})")
-                    return "\n".join(valid_lines[:15]) # Max 15 scenes (1 min 15 sec reel)
+                    return "\n".join(valid_lines[:15]) 
         except Exception as e:
             print(f"⚠️ Model failed: {e}")
             time.sleep(2)
@@ -126,4 +126,4 @@ if __name__ == "__main__":
     with open("music_prompt.txt", "w", encoding="utf-8") as f:
         f.write(music)
         
-    print("✅ All Brain tasks completed! Ready for Epic Anime Generation.")
+    print("✅ All Brain tasks completed!")
