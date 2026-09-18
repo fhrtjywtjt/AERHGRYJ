@@ -4,7 +4,6 @@ import re
 import urllib.request
 
 INPUT_DIR = "generated_videos"
-VOICE_DIR = "generated_voices"
 OUTPUT_DIR = "final_output"
 PROMPT_FILE = "prompts.txt"
 os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -19,43 +18,45 @@ def download_font():
 
 def process_clip(idx, text_overlay):
     v_path = os.path.join(INPUT_DIR, f"video_{idx}.mp4")
-    a_path = os.path.join(VOICE_DIR, f"voice_{idx}.mp3")
     out_path = os.path.join(OUTPUT_DIR, f"clip_{idx}.mp4")
     
-    if not os.path.exists(v_path) or not os.path.exists(a_path):
+    if not os.path.exists(v_path):
+        print(f"⚠️ Video {v_path} not found. Skipping scene {idx}...")
         return None
 
-    # Video ke center mein yellow border wala white text likhega
     safe_text = text_overlay.replace("'", "").replace(":", "")
     drawtext = f"drawtext=fontfile={FONT_FILE}:text='{safe_text}':fontcolor=white:fontsize=65:x=(w-text_w)/2:y=(h-text_h)/2+200:bordercolor=black:borderw=4"
     
-    # Video ko voice ke length tak loop karega aur text lagayega
+    # 🔴 FIX: No stream_loop! Video directly processes fast with its own audio.
     cmd = [
         "ffmpeg", "-y", 
-        "-stream_loop", "-1", "-i", v_path, 
-        "-i", a_path, 
+        "-i", v_path, 
         "-vf", f"scale=1080:1920:flags=lanczos:force_original_aspect_ratio=increase,crop=1080:1920,setsar=1,fps=30,format=yuv420p,{drawtext}", 
         "-c:v", "libx264", "-crf", "23", "-preset", "veryfast", 
         "-c:a", "aac", "-b:a", "192k", 
-        "-shortest", out_path
+        out_path
     ]
     
-    print(f"⚙️ Rendering Scene {idx} (Video + Voice + Text)...")
+    print(f"⚙️ Rendering Scene {idx} (Video + Built-in Voice + Text)...")
     subprocess.run(cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     return out_path
 
 def main():
     download_font()
     
-    # Prompts se Text padhna (Column 3)
     texts = {}
-    with open(PROMPT_FILE, "r", encoding="utf-8") as f:
-        for i, line in enumerate(f.readlines(), 1):
-            parts = line.split("|")
-            if len(parts) >= 3:
-                texts[i] = parts[2].strip()
+    if os.path.exists(PROMPT_FILE):
+        with open(PROMPT_FILE, "r", encoding="utf-8") as f:
+            for i, line in enumerate(f.readlines(), 1):
+                parts = line.split("|")
+                if len(parts) >= 3:
+                    texts[i] = parts[2].strip()
 
     video_files = [f for f in os.listdir(INPUT_DIR) if f.startswith("video_") and f.endswith(".mp4")]
+    if not video_files:
+        print("❌ No videos found to process!")
+        return
+
     video_files.sort(key=lambda x: int(re.search(r'\d+', x).group()))
     
     processed_clips = []
@@ -63,6 +64,10 @@ def main():
         idx = int(re.search(r'\d+', v_name).group())
         clip = process_clip(idx, texts.get(idx, ""))
         if clip: processed_clips.append(clip)
+
+    if not processed_clips:
+        print("❌ No valid clips rendered!")
+        return
 
     list_path = "list.txt"
     with open(list_path, "w") as f:
@@ -74,9 +79,8 @@ def main():
 
     final_output = os.path.join(OUTPUT_DIR, "Final_Agency_Reel.mp4")
 
-    # BGM ko halka (0.1) aur Voice ko tez (2.0) karega
     if os.path.exists("bgm.wav"):
-        print("🎵 Mixing BGM with Voiceover...")
+        print("🎵 Mixing BGM with Character Voice...")
         cmd = [
             "ffmpeg", "-y", "-i", temp_output, "-stream_loop", "-1", "-i", "bgm.wav", 
             "-filter_complex", "[0:a]volume=2.0[a1];[1:a]volume=0.1[a2];[a1][a2]amix=inputs=2:duration=first:dropout_transition=2[a]", 
