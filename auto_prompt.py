@@ -42,13 +42,33 @@ def smart_ai_request(system_prompt, user_prompt, description):
     return None
 
 def generate_ai_script(duration_sec, topic):
+    # Scene calculation based on time
     target_scenes = max(2, math.ceil(int(duration_sec) / 5))
-    system_prompt = "You are a highly aggressive Action-Drama Director. Output ONLY the requested format. NO tables. NO markdown."
-    user_prompt = f"""Task: Create a FAST-PACED, emotional action story based on: "{topic}". Exactly {target_scenes} scenes.
+    
+    # SYSTEM PROMPT: Strictly safe for YouTube and focus on storytelling
+    system_prompt = "You are a Master Visual Storyteller and a Strict YouTube Compliance Officer. Output ONLY the requested format. NO tables. NO markdown."
+    
+    # USER PROMPT: Strict rules for Story Arc, Violations, Visuals, and BACKGROUND CONSISTENCY
+    user_prompt = f"""Task: Create a COMPLETE, highly engaging, and 100% YOUTUBE-SAFE visual story based on: "{topic}".
+    Total Video Duration: {duration_sec} seconds.
+    You MUST generate EXACTLY {target_scenes} scenes.
+
+    🚨 YOUTUBE STRICT SAFETY RULES (NO VIOLATIONS):
+    - STRICTLY NO blood, NO weapons, NO gore, NO extreme violence, NO self-harm, NO adult content.
+    - Must be 100% Family-Friendly / Advertiser-Friendly.
+    - Show tension using 'shadows', 'storms', 'running', or 'emotional facial expressions', but NEVER show physical harm.
+
+    🚨 PERFECT STORY ARC (BEGINNING TO END):
+    - Scene 1: MUST clearly introduce the main character, the background, and the start of the situation.
+    - Middle Scenes: MUST show the struggle or action clearly.
+    - Scene {target_scenes} (Last Scene): MUST show a clear, definitive ENDING or RESOLUTION.
+
+    🚨 BACKGROUND & CHARACTER CONSISTENCY (CRITICAL RULE) 🚨:
+    - You MUST invent a specific character AND a specific background/location.
+    - DO NOT CHANGE BACKGROUNDS RANDOMLY! The environment/background MUST remain exactly the SAME in consecutive scenes unless the story logically forces the character to travel somewhere else. The visual flow must feel continuous.
 
     🚨 HIGH-RETENTION VISUALS:
-    - Constant Motion (Running, dodging, panicking). NO static scenes.
-    - Safe for Monetization. Use 'storm', 'shadows', 'ruins'.
+    - Constant Motion (Running, dodging, panicking, discovering). NO static scenes.
 
     🚨 AUDIO RULES:
     - NO BGM. NO VOICE.
@@ -56,9 +76,10 @@ def generate_ai_script(duration_sec, topic):
     - End every Video Prompt with exactly: "NO BGM, NO VOICE."
 
     FORMAT RULES: [Image Prompt] | [Video Prompt]
-    1. Invent a specific character and copy-paste it at the beginning of EVERY Image prompt.
+    1. Copy-paste the EXACT SAME character description AND background description at the beginning of EVERY Image prompt to force the AI to keep the location consistent.
     2. One '|' per line. NO TABLES.
     """
+    
     text = smart_ai_request(system_prompt, user_prompt, "Generating Script")
     if text:
         valid_lines = [line.strip() for line in text.split('\n') if '|' in line and not line.strip().startswith('|') and '---' not in line]
@@ -71,7 +92,7 @@ def generate_ai_metadata(topic):
     user_prompt = f"""Story Topic: '{topic}'.
     Create Advertiser-Friendly YouTube Shorts metadata and a Custom Music Prompt.
     
-    1. TITLE: Exactly 40 to 60 characters long.
+    1. TITLE: Exactly 40 to 60 characters long. Avoid clickbait violation words.
     2. DESC: Exactly 200 to 300 characters long.
     3. TAGS: Exactly 5 to 6 comma-separated tags.
     4. MUSIC: Read the Story Topic carefully. Write a 100% UNIQUE 5-8 word background music prompt matching the EXACT emotion of this specific story. 
