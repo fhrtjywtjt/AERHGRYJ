@@ -42,26 +42,32 @@ async def live_screenshot_monitor(page, machine_id, stop_event):
             shot_count += 1
         except: pass
 
-def read_video_prompts():
+def read_combined_prompts():
     if not os.path.exists("prompts.txt"):
-        return {}, {}
+        return {}
     with open("prompts.txt", "r", encoding="utf-8") as f:
         lines = f.readlines()
     
-    video_prompts = {}
-    dialogues = {}
+    combined_prompts = {}
     for idx, line in enumerate(lines, start=1):
         parts = line.split("|")
-        if len(parts) >= 2:
-            video_prompts[idx] = parts[1].strip()
-        if len(parts) >= 4:
-            dialogues[idx] = parts[3].strip()
-    return video_prompts, dialogues
+        # Column 2 (Video Prompt)
+        vid_prompt = parts[1].strip() if len(parts) >= 2 else "Cinematic motion"
+        # Column 4 (Dialogue)
+        dialogue = parts[3].strip() if len(parts) >= 4 else ""
+        
+        # 🔴 MAGIC YAHAN HAI: Dono ko jod kar 1 hi text banaya jo dabbe mein paste hoga
+        if dialogue:
+            combined_prompts[idx] = f"{vid_prompt} | Character speaking dialogue: {dialogue}"
+        else:
+            combined_prompts[idx] = vid_prompt
+            
+    return combined_prompts
 
 
 async def main():
     machine_id = int(sys.argv[1]) if len(sys.argv) > 1 else 1
-    video_prompts, dialogues = read_video_prompts()
+    combined_prompts = read_combined_prompts()
     
     img_name = f"scene_{machine_id}.jpg"
     img_path = os.path.join(IMAGE_DIR, img_name)
@@ -73,10 +79,10 @@ async def main():
              print(f"❌ Image not found anywhere for Machine {machine_id}.")
              return
 
-    motion_prompt = video_prompts.get(machine_id, "Cinematic slow motion movement, foley sound")
-    dialogue_text = dialogues.get(machine_id, "")
+    # Ye wo final text hai jo Upsampler ke dabbe mein jayega
+    final_prompt_text = combined_prompts.get(machine_id, "Cinematic slow motion movement, character talking")
     
-    print(f"🖥️ Machine {machine_id} processing IMAGE-TO-VIDEO with Lip Sync...")
+    print(f"🖥️ Machine {machine_id} pasting FULL PROMPT (Video + Dialogue) in one box...")
 
     async with async_playwright() as p:
         max_browser_restarts = 10  
@@ -104,36 +110,19 @@ async def main():
                 await file_input.set_input_files(img_path)
                 await asyncio.sleep(3)
 
-                # 2. Text Prompt (Motion)
-                selectors = ["input[placeholder*='prompt' i]", "textarea[placeholder*='prompt' i]", "textarea"]
+                # 2. Paste Full Text in the SINGLE Prompt Box
+                # (Aapki photo ke hisaab se pehla textarea hi target banega)
+                print(f"✍️ Typing Prompt: {final_prompt_text[:50]}...")
+                selectors = ["textarea", "input[placeholder*='prompt' i]", "textarea[placeholder*='prompt' i]"]
                 for sel in selectors:
                     loc = page.locator(sel).first
                     if await loc.is_visible(timeout=2000):
                         try:
-                            await loc.fill(motion_prompt)
+                            await loc.fill(final_prompt_text)
                             break
                         except: continue
 
-                # 3. Enter Dialogue for Character Voice (LIP SYNC)
-                if dialogue_text:
-                    print(f"🗣️ Attempting to add dialogue: {dialogue_text}")
-                    try:
-                        # Attempt to click any Audio/Speech tab if present
-                        for tab in ["text='Audio'", "text='Voice'", "text='Speech'", "text='Lip sync'"]:
-                            btn = page.locator(f"button:{tab}, a:{tab}").first
-                            if await btn.is_visible(timeout=1500):
-                                await btn.click()
-                                await asyncio.sleep(1)
-                                break
-                                
-                        voice_box = page.locator("textarea[placeholder*='speech' i], textarea[placeholder*='voice' i], input[placeholder*='voice' i]").first
-                        if await voice_box.is_visible(timeout=3000):
-                            await voice_box.fill(dialogue_text)
-                            print("✅ Dialogue entered successfully!")
-                    except Exception as e:
-                        print(f"⚠️ Could not find voice input box: {e}")
-
-                # 4. Set Duration 5 Seconds
+                # 3. Set Duration 5 Seconds
                 try:
                     duration_dropdown = page.get_by_text("3 seconds")
                     if await duration_dropdown.is_visible(timeout=3000):
@@ -142,7 +131,7 @@ async def main():
                         await page.get_by_text("5 seconds", exact=True).click()
                 except: pass
 
-                # 5. Generate
+                # 4. Generate
                 generate_btn = page.get_by_role("button", name="Generate Video", exact=True)
                 if not await generate_btn.is_visible(timeout=3000):
                     generate_btn = page.locator("button:has-text('Generate')").first
