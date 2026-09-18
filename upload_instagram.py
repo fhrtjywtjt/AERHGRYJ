@@ -1,9 +1,8 @@
 import os
+import re
 import json
 import base64
-import asyncio
-import re
-from playwright.async_api import async_playwright
+from instagrapi import Client
 
 VIDEO_FILE = "final_output/Final_Agency_Reel.mp4"
 META_FILE = "metadata.txt"
@@ -20,63 +19,54 @@ def get_metadata():
             except: pass
     return f"{caption}\n\n{tags}"
 
-async def upload_to_instagram():
+def upload_reel():
     cookie_b64 = os.getenv("IG_COOKIES_BASE64")
+
     if not cookie_b64:
         print("❌ ERROR: IG_COOKIES_BASE64 secret is missing!")
         return
 
-    # Base64 cookies ko file me save karna
-    with open("ig_cookies.json", "w") as f:
-        f.write(base64.b64decode(cookie_b64).decode("utf-8"))
+    if not os.path.exists(VIDEO_FILE):
+        print(f"❌ ERROR: Video file not found at {VIDEO_FILE}")
+        return
+
+    # 1. Decode Base64 and find 'sessionid' from the Cookie JSON
+    sessionid = None
+    try:
+        cookies_json = base64.b64decode(cookie_b64).decode("utf-8")
+        cookies_list = json.loads(cookies_json)
+        
+        for cookie in cookies_list:
+            if cookie.get("name") == "sessionid":
+                sessionid = cookie.get("value")
+                break
+                
+        if not sessionid:
+            print("❌ ERROR: 'sessionid' nahi mila tumhari cookies mein. Nayi cookie export karo!")
+            return
+    except Exception as e:
+        print(f"❌ ERROR parsing cookies: {e}")
+        return
 
     final_caption = get_metadata()
-    print("🚀 Starting Instagram Auto-Upload...")
+    print("🚀 Starting Instagram Auto-Upload via Instagrapi (Cookie Session)...")
 
-    async with async_playwright() as p:
-        # iPhone 13 jaisa mobile browser khulega taaki IG block na kare
-        browser = await p.chromium.launch(headless=True)
-        context = await browser.new_context(
-            storage_state="ig_cookies.json",
-            user_agent="Mozilla/5.0 (iPhone; CPU iPhone OS 15_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.0 Mobile/15E148 Safari/604.1"
+    cl = Client()
+    try:
+        print("⏳ Logging into Instagram using Session ID...")
+        # 2. Login using the extracted sessionid
+        cl.login_by_sessionid(sessionid)
+        print("✅ Login Successful from Cookies!")
+        
+        print("⏳ Uploading Reel... Please wait, this might take a minute.")
+        media = cl.clip_upload(
+            VIDEO_FILE,
+            final_caption
         )
-        page = await context.new_page()
-
-        try:
-            await page.goto("https://www.instagram.com/", timeout=60000)
-            await asyncio.sleep(5)
-            
-            # Plus icon / New Post pe click
-            await page.locator("[aria-label='New post']").click()
-            await asyncio.sleep(2)
-            
-            # File Upload
-            file_input = page.locator("input[accept^='video/']")
-            await file_input.set_input_files(VIDEO_FILE)
-            await asyncio.sleep(5)
-
-            # Next Buttons
-            await page.get_by_text("Next").click()
-            await asyncio.sleep(2)
-            await page.get_by_text("Next").click()
-            await asyncio.sleep(2)
-
-            # Type Caption
-            await page.locator("textarea[aria-label='Write a caption...']").fill(final_caption)
-            await asyncio.sleep(3)
-
-            # Share Button
-            await page.get_by_text("Share").click()
-            print("⏳ Uploading to IG Servers... Please wait.")
-            
-            # Wait for upload to complete
-            await page.wait_for_selector("text='Your reel has been shared.'", timeout=90000)
-            print("✅ BOOM! REEL UPLOADED TO INSTAGRAM SUCCESSFULLY!")
-            
-        except Exception as e:
-            print(f"❌ Instagram Upload Failed: {e}")
-            
-        await browser.close()
+        print(f"✅ BOOM! REEL UPLOADED SUCCESSFULLY! Media ID: {media.pk}")
+        
+    except Exception as e:
+        print(f"❌ Instagram Upload Failed: {e}")
 
 if __name__ == "__main__":
-    asyncio.run(upload_to_instagram())
+    upload_reel()
