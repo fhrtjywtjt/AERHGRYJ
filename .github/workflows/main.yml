@@ -11,9 +11,9 @@ permissions:
 
 jobs:
   # ==========================================
-  # STAGE 1: AI BRAIN & VOICEOVER GENERATION
+  # STAGE 1: AI BRAIN GENERATION (No External Voice)
   # ==========================================
-  stage1-brain-and-voice:
+  stage1-brain:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -22,15 +22,12 @@ jobs:
         python-version: '3.10'
         
     - name: Install Dependencies
-      run: pip install openai edge-tts
+      run: pip install openai
         
     - name: Run Agency Brain (Generate Script & Hooks)
       run: python ig_marketer_brain.py
       env:
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-        
-    - name: Generate AI Voiceovers
-      run: python generate_voice.py
         
     - uses: actions/upload-artifact@v4
       with:
@@ -39,7 +36,6 @@ jobs:
           prompts.txt
           metadata.txt
           music_prompt.txt
-          generated_voices/
           
     - id: set-matrix
       run: |
@@ -54,13 +50,13 @@ jobs:
   # STAGE 2: IMAGE GENERATION (PARALLEL)
   # ==========================================
   stage2-images:
-    needs: stage1-brain-and-voice
+    needs: stage1-brain
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       max-parallel: 5
       matrix:
-        machine_id: ${{ fromJson(needs.stage1-brain-and-voice.outputs.matrix) }}
+        machine_id: ${{ fromJson(needs.stage1-brain.outputs.matrix) }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -89,16 +85,16 @@ jobs:
         path: scene_images/
 
   # ==========================================
-  # STAGE 3: VIDEO GENERATION (PARALLEL)
+  # STAGE 3: VIDEO GENERATION (PARALLEL - With Lip Sync)
   # ==========================================
   stage3-videos:
-    needs: [stage1-brain-and-voice, stage2-images]
+    needs: [stage1-brain, stage2-images]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       max-parallel: 2
       matrix:
-        machine_id: ${{ fromJson(needs.stage1-brain-and-voice.outputs.matrix) }}
+        machine_id: ${{ fromJson(needs.stage1-brain.outputs.matrix) }}
     steps:
     - uses: actions/checkout@v4
     - uses: actions/setup-python@v5
@@ -146,9 +142,7 @@ jobs:
     - name: Install System Dependencies
       run: |
         sudo apt-get update && sudo apt-get install -y ffmpeg zip
-        pip install playwright transformers torch scipy requests edge-tts instagrapi
-        playwright install chromium
-        playwright install-deps chromium
+        pip install playwright transformers torch scipy requests instagrapi
         
     - uses: actions/download-artifact@v4
       with:
@@ -163,7 +157,7 @@ jobs:
     - name: Generate Background Music
       run: python generate_music.py
         
-    - name: Final Video Editing (Text Overlay + Voice + BGM)
+    - name: Final Video Editing (Text Overlay + BGM)
       run: python process_videos.py
       
     - name: Upload to Instagram via Instagrapi (Cookies) 🚀
