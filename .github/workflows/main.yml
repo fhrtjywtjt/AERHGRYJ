@@ -20,7 +20,7 @@ jobs:
         
     - name: Install Dependencies
       run: |
-        sudo apt-get update && sudo apt-get install -y ffmpeg
+        sudo apt-get update && sudo apt-get install -y ffmpeg zip
         pip install openai requests playwright urllib3 instagrapi google-api-python-client google-auth-oauthlib google-auth-httplib2 transformers torch scipy
         playwright install chromium
         playwright install-deps chromium
@@ -30,25 +30,22 @@ jobs:
         OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       run: python ig_marketer_brain.py
       
-    - name: Format Prompt for Image Generator
+    - name: Format Prompts & Metadata
       run: |
-        # Bing bot requires prompts.txt format
         grep "IMAGE_PROMPT:" reel_data.txt | sed 's/IMAGE_PROMPT: //' > prompts.txt
-        # Extract Metadata for Uploads
-        grep -E "IG_CAPTION:|IG_TAGS:|YT_TITLE:|YT_DESC:|YT_TAGS:" reel_data.txt > metadata.txt
+        grep -E "IG_CAPTION:|IG_TAGS:|YT_TITLE:|YT_DESC:|YT_TAGS:|MUSIC:" reel_data.txt > metadata.txt
+        grep "MUSIC:" reel_data.txt | sed 's/MUSIC: //' > music_prompt.txt
 
-    - name: 🖼️ Generate Cinematic Image
+    - name: 🖼️ Generate Image (Bing DALL-E)
       env:
         BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
         CHAT_ID: ${{ secrets.CHAT_ID }}
       run: python generate_image.py 1
         
-    - name: 🎵 Generate BGM
-      run: |
-        echo "deep cinematic bass pulse" > music_prompt.txt
-        python generate_music.py
+    - name: 🎵 Generate BGM (Local AI)
+      run: python generate_music.py
         
-    - name: 🎬 Create 15-Sec Reel
+    - name: 🎬 Create 15-Sec Cinematic Reel
       run: python make_reel.py
       
     - name: 📱 Upload to Instagram
@@ -62,3 +59,11 @@ jobs:
       env:
         YT_OAUTH_JSON: ${{ secrets.YT_OAUTH_JSON }}
       run: python upload_youtube.py
+      
+    - name: Create Backup ZIP
+      run: zip -r Final_Agency_Reel.zip final_output/Final_Agency_Reel.mp4 metadata.txt
+      
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Final_Ready_Reel
+        path: Final_Agency_Reel.zip
