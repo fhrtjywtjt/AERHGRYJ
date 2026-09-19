@@ -34,48 +34,49 @@ def get_live_free_models():
         if fb not in models_list: models_list.append(fb)
     return models_list
 
-def generate_anime_agency_script():
-    system_prompt = """You are a Master Anime Director, Cinematographer, and a clever Marketer. 
+def generate_realistic_agency_script():
+    system_prompt = """You are a Master Cinematic Director and Screenwriter. 
     Output ONLY the requested raw format. NO tables, NO intro, NO markdown."""
 
-    user_prompt = """Task: Write a HIGHLY DETAILED, persuasive Anime Story Reel selling our YouTube Automation Service.
+    user_prompt = """Task: Write a REALISTIC (NOT Anime) persuasive Story Reel selling a YouTube Automation Service.
 
-    🚨 CRITICAL 5-SECOND RULE FOR AI:
-    - Our video generator ONLY makes 5-SECOND CLIPS per scene.
-    - Since it's fast-paced Anime style, Character Dialogue MUST BE exactly 10 to 15 WORDS per scene.
-    - Break the story across 10 to 15 scenes total.
+    🚨 VISUAL STYLE (CRITICAL): 
+    - NO ANIME. NO CARTOONS. 
+    - Must be "Ultra-realistic, 8k resolution, cinematic photography, photorealistic humans".
+    
+    🚨 CHARACTERS & CONVERSATION FLOW (CRITICAL):
+    There are TWO characters having a CONTINUOUS CONVERSATION. 
+    - Character 1: Rahul (A frustrated, tired 20-year-old Indian creator in a messy room).
+    - Character 2: Vikram (A rich, successful 25-year-old Indian entrepreneur in a luxury studio).
+    The dialogue MUST flow logically. Rahul asks a question or complains, and Vikram answers with a solution. 
+    Example: 
+    Scene 1 (Rahul): "Bhai, main din raat edit karta hoon, fir bhi views zero hain."
+    Scene 2 (Vikram): "Kyunki tu sab khud kar raha hai. Smart log outsource karte hain."
 
-    🚨 VOICE CONSISTENCY RULE:
-    - To keep the voice consistent, PREFIX the dialogue with the character's voice style in brackets. 
-    - Example: [Voice: Young Indian Male, Energetic] Mera dost kal ek lakh kamaya, aur main yahan baitha hoon...
-    - If a second character speaks, use a different prefix like [Voice: Deep Male Boss]
-
-    🚨 STORY & AGENCY PITCH RULES:
-    1. THE HOOK: Scene 1 must be an extreme hook.
-    2. THE DETAIL: Talk about the struggle of editing and failing algorithms. "Smart people outsource".
-    3. THE PRICING: Basic Plan ₹499/mo (1 Video Daily), Pro Plan ₹999/mo (2 Videos). DM "GROW".
-    4. VISUALS: Invent ONE specific anime character (e.g., Aarav) and put this in EVERY Image Prompt.
+    🚨 5-SECOND RULE:
+    - Dialogue MUST BE exactly 8 to 12 WORDS per scene so it fits perfectly in 5 seconds.
+    - Write exactly 10 to 12 scenes.
 
     🚨 FORMAT (4 columns separated by '|'):
-    [Image Prompt] | [Video Prompt (Camera Angle)] | [On-Screen Text] | [Dialogue in Hindi with Voice Tag (10-15 WORDS)]
+    [Image Prompt (Ultra-realistic)] | [Video Prompt (Camera Angle)] | [On-Screen Text] | [Dialogue in Hindi with Voice Tag]
 
-    Start immediately:"""
+    Start the continuous conversation immediately:"""
 
     models = get_live_free_models()
     for attempt in range(1, 10):
         model_name = models[attempt % len(models)]
-        print(f"🔄 Attempt {attempt} - Generating Detailed Anime Pitch using {model_name}...")
+        print(f"🔄 Attempt {attempt} - Generating Realistic Script using {model_name}...")
         try:
             response = client.chat.completions.create(
                 model=model_name,
                 messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                temperature=0.9
+                temperature=0.7 # Thoda kam temperature rakha hai taaki logic theek rahe
             )
             text = response.choices[0].message.content
             if text:
                 valid_lines = [line.strip() for line in text.split('\n') if line.count('|') >= 3]
                 if len(valid_lines) >= 8:
-                    print(f"✅ Script Generated Successfully! (Total Scenes: {len(valid_lines)})")
+                    print(f"✅ Realistic Conversational Script Generated! (Scenes: {len(valid_lines)})")
                     return "\n".join(valid_lines[:15]) 
         except Exception as e:
             time.sleep(2)
@@ -83,14 +84,14 @@ def generate_anime_agency_script():
 
 def generate_metadata():
     system_prompt = "You are a Viral Instagram Reel & YouTube Shorts SEO Expert."
-    user_prompt = """Generate high-converting metadata for an Anime Story selling a YouTube Automation Service (Basic ₹499, Pro ₹999).
+    user_prompt = """Generate high-converting metadata for a Realistic Story selling a YouTube Automation Service (Basic ₹499, Pro ₹999).
     Format exactly like this:
     IG_CAPTION: [3-line punchy caption telling them to DM 'GROW']
-    IG_TAGS: #AnimeStory #YouTubeAutomation [Add 4 more]
+    IG_TAGS: #YouTubeAutomation #MakeMoneyOnline [Add 4 more]
     YT_TITLE: [Clickbaity YouTube Shorts Title with 🔥 emoji]
     YT_DESC: [Short description with link placeholder and automation details]
     YT_TAGS: youtube automation, make money online, [add 5 more comma separated]
-    MUSIC: trendy anime lofi beat"""
+    MUSIC: trending cinematic background music"""
     
     models = get_live_free_models()
     for model_name in models[:3]:
@@ -105,10 +106,10 @@ def generate_metadata():
         except:
             time.sleep(1)
             
-    return "IG_CAPTION: DM GROW\nIG_TAGS: #YT\nYT_TITLE: How to make money 🔥\nYT_DESC: DM us\nYT_TAGS: money\nMUSIC: lofi"
+    return "IG_CAPTION: DM GROW\nIG_TAGS: #YT\nYT_TITLE: How to make money 🔥\nYT_DESC: DM us\nYT_TAGS: money\nMUSIC: cinematic beat"
 
 if __name__ == "__main__":
-    script_output = generate_anime_agency_script()
+    script_output = generate_realistic_agency_script()
     with open(PROMPT_FILE, "w", encoding="utf-8") as f:
         f.write(script_output + "\n")
         
@@ -118,9 +119,9 @@ if __name__ == "__main__":
         
     try:
         music = re.search(r"MUSIC:\s*(.*)", meta_text).group(1).strip()
-    except: music = "lofi beat"
+    except: music = "cinematic beat"
     
     with open("music_prompt.txt", "w", encoding="utf-8") as f:
         f.write(music)
         
-    print("✅ All Brain tasks completed (IG & YT Ready)!")
+    print("✅ All Brain tasks completed (Realistic Humans & Logical Conversation Ready)!")
