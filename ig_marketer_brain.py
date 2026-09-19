@@ -1,79 +1,49 @@
 import os
 import sys
-import time
-import json
+import random
 import urllib.request
-import re
+import json
 from openai import OpenAI
 
-PROMPT_FILE = "prompts.txt"
-METADATA_FILE = "metadata.txt"
-
 API_KEY = os.getenv("OPENROUTER_API_KEY")
-if not API_KEY:
-    sys.exit(1)
-
+if not API_KEY: sys.exit(1)
 client = OpenAI(base_url="https://openrouter.ai/api/v1", api_key=API_KEY)
 
-def get_live_free_models():
-    models_list = []
+def generate_viral_concept():
+    # हर बार अलग थीम देने के लिए रैंडम वर्ड
+    themes = ["Luxury Car", "Neon City Rooftop", "Private Jet", "Modern Office", "Hacker Setup", "Beach Mansion"]
+    current_theme = random.choice(themes)
+
+    system_prompt = "You are a Viral Instagram Reel Creator. Output ONLY raw text in the exact requested format."
+    user_prompt = f"""Create a highly engaging 15-second static Reel concept selling a YouTube Automation Agency.
+    Theme of the image: {current_theme}
+    
+    Make it completely NEW and DIFFERENT from previous ones.
+    
+    FORMAT EXACTLY LIKE THIS:
+    IMAGE_PROMPT: [Ultra-realistic 8k cinematic photo prompt based on the theme. Describe a wealthy faceless or back-facing character]
+    HOOK: [1 Short Punchy Line in Hindi/Hinglish (e.g., "YOUTUBE SE ₹1 LAKH/MONTH?")]
+    BODY: [2-3 lines detailing the service (e.g., "Bina editing kiye channel grow karo.\\nHum script, edit aur upload karenge.\\nDM 'GROW' to start.")]
+    IG_CAPTION: Stop thinking, start earning! DM GROW 🚀 #YouTubeAutomation #MakeMoneyOnline
+    YT_TITLE: Secret to YouTube Growth 🔥 #shorts
+    """
+
     try:
-        req = urllib.request.Request("https://openrouter.ai/api/v1/models")
-        with urllib.request.urlopen(req) as response:
-            data = json.loads(response.read().decode('utf-8'))
-        models_list = [m["id"] for m in data.get("data", []) if m.get("pricing", {}).get("prompt") == "0" and m.get("pricing", {}).get("completion") == "0"]
-    except: pass
-    fallbacks = ["google/gemini-2.0-flash-lite-preview-02-05:free", "meta-llama/llama-3.3-70b-instruct:free"]
-    for fb in fallbacks:
-        if fb not in models_list: models_list.append(fb)
-    return models_list
-
-def generate_cinematic_agency_script():
-    system_prompt = "You are a Master Film Director. Output ONLY raw format. NO markdown."
-    
-    user_prompt = """Task: Write a REALISTIC persuasive Story Reel selling a YouTube Automation Service.
-
-    🚨 PROBLEM TO SOLVE: AI Face inconsistency & Boring visual pacing.
-    SOLUTION: Use the "A-Roll / B-Roll" technique. DO NOT show the character's face in every scene.
-    Alternate between a Face shot (A-Roll) and an Object/Environment shot (B-Roll) where the face is NOT visible.
-
-    🚨 CHARACTER DETAILS (EXTREMELY SPECIFIC TO KEEP FACE CONSISTENT):
-    - Rahul (A-Roll): "20-year-old Indian male, wearing thick black square glasses, messy hair, faded black hoodie. Dimly lit bedroom."
-    - Rahul (B-Roll examples): "Close up of a hand holding a glowing smartphone", "Close up of a computer monitor showing a red downward arrow graph".
-    - Vikram (A-Roll): "25-year-old Indian entrepreneur, neat beard, wearing a crisp navy blue suit, gold watch. Luxury office."
-    - Vikram (B-Roll examples): "Close up of an iPad showing 100k subscribers", "Coffee cup on a mahogany desk with a city view behind".
-
-    🚨 DIALOGUE RULES (PREVENT AI MUMBLING):
-    - Use VERY SIMPLE Hindi words. Avoid complex words. (e.g., Use "Views" instead of "वृद्धि", Use "Idea" instead of "विचार").
-    - Dialogue must be exactly 8 to 12 words.
-    
-    🚨 FORMAT (4 columns separated by '|'):
-    [Image Prompt] | [Video Prompt (Continuous camera motion)] | [On-Screen Text] | [Dialogue in Simple Hindi]
-
-    Write a 10-scene logical conversation, alternating between Face shots and B-Roll shots:"""
-
-    models = get_live_free_models()
-    for attempt in range(1, 10):
-        model_name = models[attempt % len(models)]
-        try:
-            response = client.chat.completions.create(
-                model=model_name,
-                messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
-                temperature=0.4
-            )
-            text = response.choices[0].message.content
-            if text:
-                valid_lines = [line.strip() for line in text.split('\n') if line.count('|') >= 3]
-                if len(valid_lines) >= 8:
-                    return "\n".join(valid_lines[:12]) 
-        except:
-            time.sleep(2)
-    sys.exit(1)
-
-def generate_metadata():
-    return "IG_CAPTION: Stop wasting time editing. DM GROW to start your automated channel today! 🚀\nIG_TAGS: #YouTubeAutomation #MakeMoneyOnline #CreatorEconomy\nYT_TITLE: Why YouTubers Fail (And How To Fix It) 🔥 #shorts\nYT_DESC: Get a full team for your channel. DM us 'GROW' on Instagram!\nYT_TAGS: youtube automation, video editing, make money online\nMUSIC: deep cinematic bass pulse"
+        response = client.chat.completions.create(
+            model="google/gemini-2.0-flash-lite-preview-02-05:free",
+            messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_prompt}],
+            temperature=0.9 # High temperature = Naya idea har baar
+        )
+        return response.choices[0].message.content
+    except:
+        return """IMAGE_PROMPT: Ultra realistic cinematic shot of a young entrepreneur in a modern glass office overlooking a neon city at night, working on a glowing laptop, 8k, photorealistic
+        HOOK: EDITING MEIN TIME WASTE MAT KARO!
+        BODY: Hamari team aapke liye YouTube videos banayegi.\nScript -> Voice -> Edit -> Upload.\nDM "GROW" to start today.
+        IG_CAPTION: DM GROW to automate your channel! 🚀 #MakeMoneyOnline #YouTubeAutomation
+        YT_TITLE: How Smart Creators Make Money 🔥 #shorts"""
 
 if __name__ == "__main__":
-    script_output = generate_cinematic_agency_script()
-    with open(PROMPT_FILE, "w", encoding="utf-8") as f: f.write(script_output + "\n")
-    with open(METADATA_FILE, "w", encoding="utf-8") as f: f.write(generate_metadata())
+    content = generate_viral_concept()
+    with open("reel_data.txt", "w", encoding="utf-8") as f:
+        f.write(content)
+    print("✅ Viral Brain Concept Generated!")
